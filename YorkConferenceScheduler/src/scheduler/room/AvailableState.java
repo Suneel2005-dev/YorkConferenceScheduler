@@ -1,4 +1,4 @@
-package scheduler.room;
+package room;
 
 public class AvailableState implements RoomState {
 

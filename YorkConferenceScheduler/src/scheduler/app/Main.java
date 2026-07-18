@@ -1,4 +1,4 @@
-package scheduler.app;
+package app;
 
 public class Main {
 
