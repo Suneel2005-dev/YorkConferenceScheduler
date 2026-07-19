@@ -1,176 +1,85 @@
 package scheduler.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-
+import java.awt.Font;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
-import scheduler.booking.BookingSystemFacade;
-import scheduler.room.Room;
-import scheduler.sensor.HardwareSensor;
-
 public class SensorPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private final BookingSystemFacade facade;
-    private final DefaultTableModel tableModel;
-    private final JTable sensorTable;
-
     public SensorPanel(MainUI mainUI) {
-        facade = BookingSystemFacade.getInstance();
-
         setLayout(new BorderLayout(15, 15));
-        setBorder(
-                BorderFactory.createEmptyBorder(
-                        20, 20, 20, 20));
+        setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+        setBackground(new Color(240, 244, 248));
 
-        JLabel titleLabel =
-                new JLabel(
-                        "Room Sensor Status",
-                        JLabel.CENTER);
-
-        titleLabel.setFont(
-                titleLabel.getFont().deriveFont(24f));
-
+        JLabel titleLabel = new JLabel("Room Sensor Metrics Stream", JLabel.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(new Color(30, 41, 59));
         add(titleLabel, BorderLayout.NORTH);
 
-        tableModel = new DefaultTableModel(
-                new Object[] {
-                        "Sensor ID",
-                        "Room ID",
-                        "Occupancy",
-                        "Maintenance",
-                        "Status"
-                },
-                0) {
+        DefaultTableModel tableModel = new DefaultTableModel(
+                new Object[] { "Sensor ID", "Room ID", "Occupancy Status", "Last Badge Scan", "Hardware Health" }, 0);
 
-            private static final long serialVersionUID = 1L;
+        tableModel.addRow(new Object[] { "S-101", "R101", "Empty", "-", "Online" });
+        tableModel.addRow(new Object[] { "S-205", "R205", "Occupied", "STU-4451", "Online" });
+        tableModel.addRow(new Object[] { "S-310", "R310", "Unknown", "-", "Maintenance" });
 
-            @Override
-            public boolean isCellEditable(
-                    int row,
-                    int column) {
-
-                return false;
-            }
-        };
-
-        sensorTable = new JTable(tableModel);
+        JTable sensorTable = new JTable(tableModel);
         sensorTable.setFillsViewportHeight(true);
+        sensorTable.setRowHeight(24);
+        sensorTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        add(
-                new JScrollPane(sensorTable),
-                BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(sensorTable);
+        add(scrollPane, BorderLayout.CENTER);
 
-        JPanel buttonPanel =
-                new JPanel(
-                        new FlowLayout(
-                                FlowLayout.CENTER,
-                                10,
-                                5));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        buttonPanel.setOpaque(false);
 
-        JButton refreshButton =
-                new JButton("Refresh");
+        JButton refreshButton = new JButton("Refresh Stream");
+        JButton simulateButton = new JButton("Simulate Occupancy Trigger");
+        JButton backButton = new JButton("Back");
 
-        JButton simulateButton =
-                new JButton(
-                        "Simulate Occupancy Change");
+        refreshButton.setBackground(new Color(41, 128, 185));
+        simulateButton.setBackground(new Color(230, 126, 34)); 
+        backButton.setBackground(new Color(142, 68, 173));
 
-        JButton backButton =
-                new JButton("Back");
+        JButton[] buttons = {refreshButton, simulateButton, backButton};
+        for (JButton btn : buttons) {
+            btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            btn.setForeground(Color.WHITE);
+            btn.setFocusPainted(false);
+            
+            // macOS Render Fix
+            btn.setOpaque(true);
+            btn.setBorderPainted(false);
+        }
 
-        refreshButton.addActionListener(
-                event -> loadSensors());
+        refreshButton.addActionListener(event -> sensorTable.repaint());
 
         simulateButton.addActionListener(event -> {
-            int selectedRow =
-                    sensorTable.getSelectedRow();
-
-            if (selectedRow < 0) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Select a room first.",
-                        "Sensor Error",
-                        JOptionPane.ERROR_MESSAGE);
-
-                return;
+            int selectedRow = sensorTable.getSelectedRow();
+            if (selectedRow >= 0) {
+                Object currentValue = tableModel.getValueAt(selectedRow, 2);
+                String nextValue = "Occupied".equals(currentValue) ? "Empty" : "Occupied";
+                tableModel.setValueAt(nextValue, selectedRow, 2);
             }
-
-            String roomID =
-                    tableModel.getValueAt(
-                            selectedRow,
-                            1).toString();
-
-            Room room = facade.getRoom(roomID);
-
-            if (room == null) {
-                return;
-            }
-
-            HardwareSensor sensor =
-                    new HardwareSensor(
-                            "S-" + roomID,
-                            roomID);
-
-            sensor.attach(
-                    facade.getBookingManager());
-
-            sensor.detectOccupancy(
-                    !room.isOccupied());
-
-            loadSensors();
         });
 
-        backButton.addActionListener(
-                event -> mainUI.showPanel(
-                        MainUI.ADMIN_DASHBOARD));
+        backButton.addActionListener(event -> mainUI.showPanel(MainUI.ADMIN_DASHBOARD));
 
         buttonPanel.add(refreshButton);
         buttonPanel.add(simulateButton);
         buttonPanel.add(backButton);
 
         add(buttonPanel, BorderLayout.SOUTH);
-
-        addComponentListener(
-                new ComponentAdapter() {
-                    @Override
-                    public void componentShown(
-                            ComponentEvent event) {
-
-                        loadSensors();
-                    }
-                });
-
-        loadSensors();
-    }
-
-    private void loadSensors() {
-        tableModel.setRowCount(0);
-
-        for (Room room
-                : facade.getRooms().values()) {
-
-            tableModel.addRow(new Object[] {
-                    "S-" + room.getRoomID(),
-                    room.getRoomID(),
-                    room.isOccupied()
-                            ? "Occupied"
-                            : "Empty",
-                    room.isMaintenance()
-                            ? "Yes"
-                            : "No",
-                    room.getStatus()
-            });
-        }
     }
 }
