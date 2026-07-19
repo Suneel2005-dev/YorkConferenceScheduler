@@ -1,19 +1,24 @@
 package scheduler.booking;
 
+import java.util.ArrayList;
 import java.util.List;
-import scheduler.booking.Booking;
+
 import scheduler.sensor.SensorObserver;
 
-public class BookingManager {
-    
-    private List<Booking> activeBookings;
+public class BookingManager implements SensorObserver {
 
-    public void update(String sensorData) {
+	private List<Booking> activeBookings;
 
-    }
+	public BookingManager() {
+		activeBookings = new ArrayList<>();
+	}
 
-    public void checkTimeouts() {
+	@Override
+	public void update(String sensorData) {
+		// Empty for now
+	}
 
-    }
-
+	public void checkTimeouts() {
+		// Empty for now
+	}
 }
