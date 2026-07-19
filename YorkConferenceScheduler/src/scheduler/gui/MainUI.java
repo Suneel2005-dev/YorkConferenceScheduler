@@ -10,7 +10,6 @@ public class MainUI extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
-    // Retained exact original backend uppercase key routing parameters[cite: 59]
     public static final String LOGIN = "LOGIN";
     public static final String REGISTRATION = "REGISTRATION";
     public static final String USER_DASHBOARD = "USER_DASHBOARD";
@@ -36,7 +35,6 @@ public class MainUI extends JFrame {
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
 
-        // Map every styled view onto the routing container pane hierarchy[cite: 59]
         contentPanel.add(new LoginPanel(this), LOGIN);
         contentPanel.add(new RegistrationPanel(this), REGISTRATION);
         contentPanel.add(new UserDashboardPanel(this), USER_DASHBOARD);
