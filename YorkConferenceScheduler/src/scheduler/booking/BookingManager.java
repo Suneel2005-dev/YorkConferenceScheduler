@@ -15,6 +15,9 @@ import scheduler.pricing.PartnerPricing;
 import scheduler.pricing.PricingStrategy;
 import scheduler.pricing.StaffPricing;
 import scheduler.pricing.StudentPricing;
+import scheduler.room.AvailableState;
+import scheduler.room.MaintenanceState;
+import scheduler.room.OccupiedState;
 import scheduler.room.Room;
 import scheduler.sensor.SensorObserver;
 import scheduler.user.User;
@@ -633,5 +636,84 @@ public class BookingManager implements SensorObserver {
 
     private String normalize(String value) {
         return value.trim().toLowerCase();
+    }
+
+    public boolean removeRoom(String roomID) {
+        Room room = getRoom(roomID);
+
+        if (room == null) {
+            return false;
+        }
+
+        for (Booking booking : activeBookings) {
+            if (!booking.isCancelled()
+                    && booking.getRoom()
+                            .getRoomID()
+                            .equalsIgnoreCase(roomID)) {
+
+                return false;
+            }
+        }
+
+        rooms.remove(normalize(roomID));
+        saveRooms();
+
+        return true;
+    }
+
+    public boolean updateRoomState(
+            String roomID,
+            String state) {
+
+        Room room = getRoom(roomID);
+
+        if (room == null || state == null) {
+            return false;
+        }
+
+        switch (state.trim().toLowerCase()) {
+        case "available":
+            room.setState(new AvailableState());
+            break;
+
+        case "occupied":
+            room.setState(new OccupiedState());
+            break;
+
+        case "maintenance":
+            room.setState(new MaintenanceState());
+            break;
+
+        default:
+            return false;
+        }
+
+        saveRooms();
+        return true;
+    }
+
+    public boolean cancelBookingByID(String bookingID) {
+        if (bookingID == null || bookingID.isBlank()) {
+            return false;
+        }
+
+        for (Booking booking : activeBookings) {
+            if (bookingID.equalsIgnoreCase(
+                        booking.getBookingID())
+                    && !booking.isCancelled()) {
+
+                if (booking.isCheckedIn()) {
+                    booking.getRoom().release();
+                    saveRooms();
+                }
+
+                booking.cancel();
+                saveBookings();
+
+                return true;
+            }
+        }
+
+        return false;
     }
 }

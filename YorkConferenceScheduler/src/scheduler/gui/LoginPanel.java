@@ -61,74 +61,140 @@ public class LoginPanel extends JPanel {
 
 		loginButton.addActionListener(event -> {
 
-			String email = emailField.getText().trim();
-			String password = new String(passwordField.getPassword());
-			String selectedRole = (String) roleBox.getSelectedItem();
+            String email = emailField.getText().trim();
+            String password =
+                    new String(passwordField.getPassword());
 
-			try {
-				if (email.isEmpty() || password.isEmpty()) {
-					throw new IllegalArgumentException("Email and password are required.");
-				}
+            String selectedRole =
+                    (String) roleBox.getSelectedItem();
 
-				if ("Chief Event Coordinator".equals(selectedRole)) {
-                    ChiefEventCoordinator coordinator = ChiefEventCoordinator.getInstance();
+            try {
+                if (email.isEmpty() || password.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "Email and password are required.");
+                }
 
-                    if (!coordinator.authenticate(email, password)) {
-                        throw new IllegalArgumentException("Invalid Chief Event Coordinator "
-                                + "email or password.");
+                /*
+                * Administrator login
+                */
+                if ("Administrator".equals(selectedRole)) {
+                    Administrator administrator =
+                            Administrator.authenticate(
+                                    email,
+                                    password);
+
+                    if (administrator == null) {
+                        throw new IllegalArgumentException(
+                                "Invalid administrator "
+                                        + "email or password.");
                     }
 
-                    JOptionPane.showMessageDialog(this, "Login successful.", "Login",
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Administrator login successful.",
+                            "Login",
                             JOptionPane.INFORMATION_MESSAGE);
 
                     emailField.setText("");
                     passwordField.setText("");
 
-                    mainUI.showPanel(MainUI.CHIEF_COORDINATOR_DASHBOARD);
+                    mainUI.showPanel(
+                            MainUI.ADMIN_DASHBOARD);
 
                     return;
                 }
 
-                if ("Administrator".equals(selectedRole)) {
-                    Administrator administrator = Administrator.authenticate(email, password);
+                /*
+                * Chief Event Coordinator login
+                */
+                if ("Chief Event Coordinator"
+                        .equals(selectedRole)) {
 
-                    if (administrator == null) {
-                        throw new IllegalArgumentException("Invalid administrator email or password.");
+                    ChiefEventCoordinator coordinator =
+                            ChiefEventCoordinator.getInstance();
+
+                    if (!coordinator.authenticate(
+                            email,
+                            password)) {
+
+                        throw new IllegalArgumentException(
+                                "Invalid Chief Event Coordinator "
+                                        + "email or password.");
                     }
 
-                    JOptionPane.showMessageDialog(this, "Administrator login successful.", "Login", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Login successful.",
+                            "Login",
+                            JOptionPane.INFORMATION_MESSAGE);
 
                     emailField.setText("");
                     passwordField.setText("");
 
-                    mainUI.showPanel(MainUI.ADMIN_DASHBOARD);
+                    mainUI.showPanel(
+                            MainUI.CHIEF_COORDINATOR_DASHBOARD);
 
                     return;
                 }
 
-				UserFactory factory = new UserFactory();
-				User user = factory.getUserByEmail(email);
+                /*
+                * Normal user login:
+                * student, faculty, staff, or partner
+                */
+                UserFactory userFactory = new UserFactory();
 
-				if (user == null || !user.checkPassword(password)) {
-					throw new IllegalArgumentException("Invalid email or password.");
-				}
+                User user =
+                        userFactory.getUserByEmail(email);
 
-				if (!user.getAccountType().equalsIgnoreCase(selectedRole)) {
-					throw new IllegalArgumentException("The selected role does not match this account.");
-				}
+                if (user == null
+                        || !user.checkPassword(password)) {
 
-				if (!user.isVerified()) {
-					throw new IllegalArgumentException("This university account has not been verified.");
-				}
+                    throw new IllegalArgumentException(
+                            "Invalid email or password.");
+                }
 
-				JOptionPane.showMessageDialog(this, "Login successful.", "Login", JOptionPane.INFORMATION_MESSAGE);
+                if (!user.getAccountType()
+                        .equalsIgnoreCase(selectedRole)) {
 
-				mainUI.showPanel(MainUI.USER_DASHBOARD);
+                    throw new IllegalArgumentException(
+                            "The selected role does not "
+                                    + "match this account.");
+                }
 
-			} catch (IllegalArgumentException | IllegalStateException exception) {
-                JOptionPane.showMessageDialog(this, exception.getMessage(), "Login Error", JOptionPane.ERROR_MESSAGE);
+                if (!user.isVerified()) {
+                    throw new IllegalArgumentException(
+                            "This university account "
+                                    + "has not been verified.");
+                }
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Login successful.",
+                        "Login",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                /*
+                * Save the logged-in user so the booking panels
+                * know whose bookings to display.
+                */
+                mainUI.setCurrentUser(user);
+
+                emailField.setText("");
+                passwordField.setText("");
+
+                mainUI.showPanel(
+                        MainUI.USER_DASHBOARD);
+
+            } catch (IllegalArgumentException
+                    | IllegalStateException exception) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        exception.getMessage(),
+                        "Login Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
-		});
+        });
 
 		registerButton.addActionListener(event -> mainUI.showPanel(MainUI.REGISTRATION));
 

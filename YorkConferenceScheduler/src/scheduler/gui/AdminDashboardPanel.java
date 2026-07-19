@@ -33,9 +33,9 @@ public class AdminDashboardPanel extends JPanel {
         sensorButton.addActionListener(
                 event -> mainUI.showPanel(MainUI.SENSOR));
         bookingsButton.addActionListener(
-                event -> mainUI.showPanel(MainUI.MY_BOOKINGS));
+                event -> mainUI.showAdministratorBookings());
         logoutButton.addActionListener(
-                event -> mainUI.showPanel(MainUI.LOGIN));
+                event -> mainUI.logout());
 
         actionPanel.add(roomManagementButton);
         actionPanel.add(sensorButton);

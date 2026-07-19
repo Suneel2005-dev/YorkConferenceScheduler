@@ -31,11 +31,11 @@ public class UserDashboardPanel extends JPanel {
         bookRoomButton.addActionListener(
                 event -> mainUI.showPanel(MainUI.ROOM_BOOKING));
         myBookingsButton.addActionListener(
-                event -> mainUI.showPanel(MainUI.MY_BOOKINGS));
+                event -> mainUI.showUserBookings());
         paymentButton.addActionListener(
                 event -> mainUI.showPanel(MainUI.PAYMENT));
         logoutButton.addActionListener(
-                event -> mainUI.showPanel(MainUI.LOGIN));
+                event -> mainUI.logout());
 
         actionPanel.add(bookRoomButton);
         actionPanel.add(myBookingsButton);

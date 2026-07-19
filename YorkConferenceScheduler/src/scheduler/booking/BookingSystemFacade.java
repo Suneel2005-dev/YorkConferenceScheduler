@@ -102,6 +102,14 @@ public class BookingSystemFacade {
 		return bookingManager.getRoom(roomID);
 	}
 
+    public java.util.Map<String, Room> getRooms() {
+        return bookingManager.getRooms();
+    }
+
+    public java.util.List<Booking> getBookings() {
+        return bookingManager.getActiveBookings();
+    }
+
 	public Booking findBookingByUser(String userID) {
 		return bookingManager.findBookingByUser(userID);
 	}
@@ -109,6 +117,23 @@ public class BookingSystemFacade {
 	public BookingManager getBookingManager() {
 		return bookingManager;
 	}
+
+    public boolean removeRoom(String roomID) {
+        return bookingManager.removeRoom(roomID);
+    }
+
+    public boolean updateRoomState(
+            String roomID,
+            String state) {
+
+        return bookingManager.updateRoomState(
+                roomID,
+                state);
+    }
+
+    public boolean cancelBookingByID(String bookingID) {
+        return bookingManager.cancelBookingByID(bookingID);
+    }
 
 	private PricingStrategy selectPricingStrategy(User user) {
 
