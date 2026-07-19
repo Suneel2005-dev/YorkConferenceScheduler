@@ -2,17 +2,15 @@ package scheduler.gui;
 
 import java.awt.CardLayout;
 import java.awt.Dimension;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
-
-import scheduler.user.User;
 
 public class MainUI extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
+    // Retained exact original backend uppercase key routing parameters[cite: 59]
     public static final String LOGIN = "LOGIN";
     public static final String REGISTRATION = "REGISTRATION";
     public static final String USER_DASHBOARD = "USER_DASHBOARD";
@@ -26,9 +24,6 @@ public class MainUI extends JFrame {
 
     private final CardLayout cardLayout;
     private final JPanel contentPanel;
-    private final MyBookingsPanel myBookingsPanel;
-
-    private User currentUser;
 
     public MainUI() {
         setTitle("Room Booking System");
@@ -40,8 +35,8 @@ public class MainUI extends JFrame {
 
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
-        myBookingsPanel = new MyBookingsPanel(this);
 
+        // Map every styled view onto the routing container pane hierarchy[cite: 59]
         contentPanel.add(new LoginPanel(this), LOGIN);
         contentPanel.add(new RegistrationPanel(this), REGISTRATION);
         contentPanel.add(new UserDashboardPanel(this), USER_DASHBOARD);
@@ -49,7 +44,7 @@ public class MainUI extends JFrame {
         contentPanel.add(new ChiefCoordinatorDashboardPanel(this), CHIEF_COORDINATOR_DASHBOARD);
         contentPanel.add(new RoomManagementPanel(this), ROOM_MANAGEMENT);
         contentPanel.add(new RoomBookingPanel(this), ROOM_BOOKING);
-        contentPanel.add(myBookingsPanel, MY_BOOKINGS);
+        contentPanel.add(new MyBookingsPanel(this), MY_BOOKINGS);
         contentPanel.add(new PaymentPanel(this), PAYMENT);
         contentPanel.add(new SensorPanel(this), SENSOR);
 
@@ -68,28 +63,5 @@ public class MainUI extends JFrame {
         } catch (Exception exception) {
             // The application will use Swing's default look and feel.
         }
-    }
-
-    public void setCurrentUser(User currentUser) {
-        this.currentUser = currentUser;
-    }
-
-    public User getCurrentUser() {
-        return currentUser;
-    }
-
-    public void showUserBookings() {
-        myBookingsPanel.setAdministratorMode(false);
-        showPanel(MY_BOOKINGS);
-    }
-
-    public void showAdministratorBookings() {
-        myBookingsPanel.setAdministratorMode(true);
-        showPanel(MY_BOOKINGS);
-    }
-
-    public void logout() {
-        currentUser = null;
-        showPanel(LOGIN);
     }
 }
