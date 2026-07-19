@@ -19,6 +19,8 @@ import javax.swing.JOptionPane;
 
 import scheduler.user.User;
 import scheduler.user.UserFactory;
+import scheduler.user.ChiefEventCoordinator;
+import scheduler.user.Administrator;
 
 public class LoginPanel extends JPanel {
 
@@ -68,13 +70,41 @@ public class LoginPanel extends JPanel {
 					throw new IllegalArgumentException("Email and password are required.");
 				}
 
-				if ("Administrator".equals(selectedRole) || "Chief Event Coordinator".equals(selectedRole)) {
+				if ("Chief Event Coordinator".equals(selectedRole)) {
+                    ChiefEventCoordinator coordinator = ChiefEventCoordinator.getInstance();
 
-					JOptionPane.showMessageDialog(this, "Administrator login is not connected yet.", "Login Error",
-							JOptionPane.ERROR_MESSAGE);
+                    if (!coordinator.authenticate(email, password)) {
+                        throw new IllegalArgumentException("Invalid Chief Event Coordinator "
+                                + "email or password.");
+                    }
 
-					return;
-				}
+                    JOptionPane.showMessageDialog(this, "Login successful.", "Login",
+                            JOptionPane.INFORMATION_MESSAGE);
+
+                    emailField.setText("");
+                    passwordField.setText("");
+
+                    mainUI.showPanel(MainUI.CHIEF_COORDINATOR_DASHBOARD);
+
+                    return;
+                }
+
+                if ("Administrator".equals(selectedRole)) {
+                    Administrator administrator = Administrator.authenticate(email, password);
+
+                    if (administrator == null) {
+                        throw new IllegalArgumentException("Invalid administrator email or password.");
+                    }
+
+                    JOptionPane.showMessageDialog(this, "Administrator login successful.", "Login", JOptionPane.INFORMATION_MESSAGE);
+
+                    emailField.setText("");
+                    passwordField.setText("");
+
+                    mainUI.showPanel(MainUI.ADMIN_DASHBOARD);
+
+                    return;
+                }
 
 				UserFactory factory = new UserFactory();
 				User user = factory.getUserByEmail(email);
@@ -95,9 +125,9 @@ public class LoginPanel extends JPanel {
 
 				mainUI.showPanel(MainUI.USER_DASHBOARD);
 
-			} catch (IllegalArgumentException ex) {
-				JOptionPane.showMessageDialog(this, ex.getMessage(), "Login Error", JOptionPane.ERROR_MESSAGE);
-			}
+			} catch (IllegalArgumentException | IllegalStateException exception) {
+                JOptionPane.showMessageDialog(this, exception.getMessage(), "Login Error", JOptionPane.ERROR_MESSAGE);
+            }
 		});
 
 		registerButton.addActionListener(event -> mainUI.showPanel(MainUI.REGISTRATION));

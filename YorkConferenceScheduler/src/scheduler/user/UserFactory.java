@@ -3,150 +3,237 @@ package scheduler.user;
 import java.util.HashMap;
 import java.util.Map;
 
+import scheduler.database.CsvDatabase;
+
 public class UserFactory {
 
-	private static final Map<String, User> usersByID = new HashMap<>();
-	private static final Map<String, User> usersByEmail = new HashMap<>();
+    private static final Map<String, User> usersByID = new HashMap<>();
+    private static final Map<String, User> usersByEmail = new HashMap<>();
 
-	public User createUser(String type, Map<String, Object> details) {
+    static {
+        loadUsers();
+    }
 
-		if (type == null || type.trim().isEmpty()) {
-			throw new IllegalArgumentException("Account type is required.");
-		}
+    public User createUser(String type, Map<String, Object> details) {
 
-		if (details == null) {
-			throw new IllegalArgumentException("User details are required.");
-		}
+        if (type == null || type.trim().isEmpty()) {
+            throw new IllegalArgumentException("Account type is required.");
+        }
 
-		String userID = getRequiredString(details, "userID");
-		String email = getRequiredString(details, "email");
-		String password = getRequiredString(details, "password");
-		String orgID = getRequiredString(details, "orgID");
+        if (details == null) {
+            throw new IllegalArgumentException("User details are required.");
+        }
 
-		validateEmail(email);
-		validatePassword(password);
+        String userID = getRequiredString(details, "userID");
+        String email = getRequiredString(details, "email");
+        String password = getRequiredString(details, "password");
+        String orgID = getRequiredString(details, "orgID");
 
-		String normalizedUserID = userID.toLowerCase();
-		String normalizedEmail = email.toLowerCase();
+        validateEmail(email);
+        validatePassword(password);
 
-		if (usersByID.containsKey(normalizedUserID)) {
-			throw new IllegalArgumentException("A user with this user ID already exists.");
-		}
+        String normalizedUserID = userID.toLowerCase();
+        String normalizedEmail = email.toLowerCase();
 
-		if (usersByEmail.containsKey(normalizedEmail)) {
-			throw new IllegalArgumentException("An account with this email already exists.");
-		}
+        if (usersByID.containsKey(normalizedUserID)) {
+            throw new IllegalArgumentException(
+                    "A user with this user ID already exists.");
+        }
 
-		boolean universityAccount = isUniversityAccount(type);
-		boolean verified = !universityAccount || isYorkEmail(email);
+        if (usersByEmail.containsKey(normalizedEmail)) {
+            throw new IllegalArgumentException(
+                    "An account with this email already exists.");
+        }
 
-		User user;
+        boolean universityAccount = isUniversityAccount(type);
+        boolean verified = !universityAccount || isYorkEmail(email);
 
-		switch (type.trim().toLowerCase()) {
-		case "student":
-			user = new Student(userID, email, password, orgID, verified);
-			break;
+        User user = createUserObject(
+                type,
+                userID,
+                email,
+                password,
+                orgID,
+                verified);
 
-		case "faculty":
-			user = new Faculty(userID, email, password, orgID, verified);
-			break;
+        storeUser(user);
 
-		case "staff":
-			user = new Staff(userID, email, password, orgID, verified);
-			break;
+        CsvDatabase.append(
+                CsvDatabase.ACCOUNTS_FILE,
+                String.join(",",
+                        CsvDatabase.clean(userID),
+                        CsvDatabase.clean(email),
+                        CsvDatabase.clean(password),
+                        CsvDatabase.clean(orgID),
+                        CsvDatabase.clean(type.toLowerCase()),
+                        Boolean.toString(verified)));
 
-		case "partner":
-			user = new Partner(userID, email, password, orgID, true);
-			break;
+        return user;
+    }
 
-		default:
-			throw new IllegalArgumentException("Unsupported account type: " + type);
-		}
+    public User getUserByID(String userID) {
+        if (userID == null || userID.isBlank()) {
+            return null;
+        }
 
-		usersByID.put(normalizedUserID, user);
-		usersByEmail.put(normalizedEmail, user);
+        return usersByID.get(userID.trim().toLowerCase());
+    }
 
-		return user;
-	}
+    public User getUserByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
 
-	public User getUserByID(String userID) {
-		if (userID == null || userID.isBlank()) {
-			return null;
-		}
+        return usersByEmail.get(email.trim().toLowerCase());
+    }
 
-		return usersByID.get(userID.trim().toLowerCase());
-	}
+    public boolean isEmailRegistered(String email) {
+        if (email == null || email.isBlank()) {
+            return false;
+        }
 
-	public User getUserByEmail(String email) {
-		if (email == null || email.isBlank()) {
-			return null;
-		}
+        return usersByEmail.containsKey(email.trim().toLowerCase());
+    }
 
-		return usersByEmail.get(email.trim().toLowerCase());
-	}
+    public boolean isValidEmail(String email) {
+        if (email == null) {
+            return false;
+        }
 
-	public boolean isEmailRegistered(String email) {
-		if (email == null || email.isBlank()) {
-			return false;
-		}
+        return email.matches(
+                "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    }
 
-		return usersByEmail.containsKey(email.trim().toLowerCase());
-	}
+    public boolean isStrongPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
 
-	public boolean isValidEmail(String email) {
-		if (email == null) {
-			return false;
-		}
+        boolean hasUppercase = password.matches(".*[A-Z].*");
+        boolean hasLowercase = password.matches(".*[a-z].*");
+        boolean hasNumber = password.matches(".*\\d.*");
+        boolean hasSymbol = password.matches(".*[^A-Za-z0-9].*");
 
-		return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-	}
+        return hasUppercase
+                && hasLowercase
+                && hasNumber
+                && hasSymbol;
+    }
 
-	public boolean isStrongPassword(String password) {
-		if (password == null || password.length() < 8) {
-			return false;
-		}
+    private static void loadUsers() {
+        for (String[] row
+                : CsvDatabase.read(CsvDatabase.ACCOUNTS_FILE)) {
 
-		boolean hasUppercase = password.matches(".*[A-Z].*");
-		boolean hasLowercase = password.matches(".*[a-z].*");
-		boolean hasNumber = password.matches(".*\\d.*");
-		boolean hasSymbol = password.matches(".*[^A-Za-z0-9].*");
+            if (row.length < 6) {
+                continue;
+            }
 
-		return hasUppercase && hasLowercase && hasNumber && hasSymbol;
-	}
+            String userID = row[0].trim();
+            String email = row[1].trim();
+            String password = row[2];
+            String orgID = row[3].trim();
+            String accountType = row[4].trim();
+            boolean verified = Boolean.parseBoolean(row[5].trim());
 
-	private String getRequiredString(Map<String, Object> details, String key) {
+            try {
+                User user = createUserObject(
+                        accountType,
+                        userID,
+                        email,
+                        password,
+                        orgID,
+                        verified);
 
-		Object value = details.get(key);
+                storeUser(user);
+            } catch (IllegalArgumentException exception) {
+                System.err.println(
+                        "Skipped invalid account row for user: " + userID);
+            }
+        }
+    }
 
-		if (value == null || value.toString().trim().isEmpty()) {
-			throw new IllegalArgumentException(key + " is required.");
-		}
+    private static User createUserObject(
+            String type,
+            String userID,
+            String email,
+            String password,
+            String orgID,
+            boolean verified) {
 
-		return value.toString().trim();
-	}
+        switch (type.trim().toLowerCase()) {
+        case "student":
+            return new Student(
+                    userID, email, password, orgID, verified);
 
-	private void validateEmail(String email) {
-		if (!isValidEmail(email)) {
-			throw new IllegalArgumentException("A valid email address is required.");
-		}
-	}
+        case "faculty":
+            return new Faculty(
+                    userID, email, password, orgID, verified);
 
-	private void validatePassword(String password) {
-		if (!isStrongPassword(password)) {
-			throw new IllegalArgumentException("Password must contain at least 8 characters, "
-					+ "including uppercase, lowercase, a number, " + "and a symbol.");
-		}
-	}
+        case "staff":
+            return new Staff(
+                    userID, email, password, orgID, verified);
 
-	private boolean isUniversityAccount(String type) {
-		String normalizedType = type.trim().toLowerCase();
+        case "partner":
+            return new Partner(
+                    userID, email, password, orgID, verified);
 
-		return normalizedType.equals("student") || normalizedType.equals("faculty") || normalizedType.equals("staff");
-	}
+        default:
+            throw new IllegalArgumentException(
+                    "Unsupported account type: " + type);
+        }
+    }
 
-	private boolean isYorkEmail(String email) {
-		String normalizedEmail = email.toLowerCase();
+    private static void storeUser(User user) {
+        usersByID.put(
+                user.getUserID().toLowerCase(),
+                user);
 
-		return normalizedEmail.endsWith("@yorku.ca") || normalizedEmail.endsWith("@my.yorku.ca");
-	}
+        usersByEmail.put(
+                user.getEmail().toLowerCase(),
+                user);
+    }
+
+    private String getRequiredString(
+            Map<String, Object> details,
+            String key) {
+
+        Object value = details.get(key);
+
+        if (value == null || value.toString().trim().isEmpty()) {
+            throw new IllegalArgumentException(key + " is required.");
+        }
+
+        return value.toString().trim();
+    }
+
+    private void validateEmail(String email) {
+        if (!isValidEmail(email)) {
+            throw new IllegalArgumentException(
+                    "A valid email address is required.");
+        }
+    }
+
+    private void validatePassword(String password) {
+        if (!isStrongPassword(password)) {
+            throw new IllegalArgumentException(
+                    "Password must contain at least 8 characters, "
+                    + "including uppercase, lowercase, a number, "
+                    + "and a symbol.");
+        }
+    }
+
+    private boolean isUniversityAccount(String type) {
+        String normalizedType = type.trim().toLowerCase();
+
+        return normalizedType.equals("student")
+                || normalizedType.equals("faculty")
+                || normalizedType.equals("staff");
+    }
+
+    private boolean isYorkEmail(String email) {
+        String normalizedEmail = email.toLowerCase();
+
+        return normalizedEmail.endsWith("@yorku.ca")
+                || normalizedEmail.endsWith("@my.yorku.ca");
+    }
 }

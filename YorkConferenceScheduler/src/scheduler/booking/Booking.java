@@ -10,6 +10,8 @@ import scheduler.user.User;
 
 public class Booking {
 
+    private String bookingID;
+
 	private User user;
 	private Room room;
 
@@ -67,6 +69,19 @@ public class Booking {
 		depositForfeited = false;
 		upfrontDeposit = 0.0;
 	}
+
+    public Booking(String bookingID, User user, Room room, LocalDateTime startTime,
+            LocalDateTime endTime, PricingStrategy pricingStrategy, PaymentStrategy paymentStrategy,
+            boolean isCheckedIn, boolean isCancelled, boolean depositForfeited, double upfrontDeposit) {
+
+        this(user, room, startTime, endTime, pricingStrategy, paymentStrategy);
+
+        this.bookingID = bookingID;
+        this.isCheckedIn = isCheckedIn;
+        this.isCancelled = isCancelled;
+        this.depositForfeited = depositForfeited;
+        this.upfrontDeposit = upfrontDeposit;
+    }
 
 	public double calculateUpfrontCost() {
 		if (pricingStrategy == null) {
@@ -173,6 +188,10 @@ public class Booking {
 		return true;
 	}
 
+    public String getBookingID() {
+        return bookingID;
+    }
+
 	public User getUser() {
 		return user;
 	}
@@ -212,6 +231,10 @@ public class Booking {
 	public PaymentStrategy getPaymentStrategy() {
 		return paymentStrategy;
 	}
+
+    public void setBookingID(String bookingID) {
+        this.bookingID = bookingID;
+    }
 
 	public void setPaymentStrategy(PaymentStrategy paymentStrategy) {
 

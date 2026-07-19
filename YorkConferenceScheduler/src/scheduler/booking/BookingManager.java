@@ -1,311 +1,637 @@
 package scheduler.booking;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import scheduler.database.CsvDatabase;
 import scheduler.payment.PaymentStrategy;
+import scheduler.pricing.FacultyPricing;
+import scheduler.pricing.PartnerPricing;
 import scheduler.pricing.PricingStrategy;
+import scheduler.pricing.StaffPricing;
+import scheduler.pricing.StudentPricing;
 import scheduler.room.Room;
 import scheduler.sensor.SensorObserver;
 import scheduler.user.User;
+import scheduler.user.UserFactory;
 
 public class BookingManager implements SensorObserver {
 
-	private final List<Booking> activeBookings;
-	private final Map<String, Room> rooms;
+    private static final DateTimeFormatter CSV_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private final List<Booking> activeBookings;
+    private final Map<String, Room> rooms;
+
+    public BookingManager() {
+        activeBookings = new ArrayList<>();
+        rooms = new HashMap<>();
+
+        loadRooms();
+        loadBookings();
+    }
+
+    public boolean addRoom(Room room) {
+        if (room == null) {
+            return false;
+        }
+
+        String roomID = normalize(room.getRoomID());
 
-	public BookingManager() {
-		activeBookings = new ArrayList<>();
-		rooms = new HashMap<>();
-	}
+        if (rooms.containsKey(roomID)) {
+            return false;
+        }
+
+        rooms.put(roomID, room);
+        saveRooms();
+
+        return true;
+    }
+
+    public Room getRoom(String roomID) {
+        if (roomID == null || roomID.isBlank()) {
+            return null;
+        }
+
+        return rooms.get(normalize(roomID));
+    }
+
+    public Booking createBooking(
+            User user,
+            String roomID,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            PricingStrategy pricingStrategy,
+            PaymentStrategy paymentStrategy) {
+
+        if (user == null) {
+            throw new IllegalArgumentException("User is required.");
+        }
+
+        Room room = getRoom(roomID);
+
+        if (room == null) {
+            throw new IllegalArgumentException(
+                    "The selected room does not exist.");
+        }
+
+        if (room.isMaintenance()
+                || "disabled".equalsIgnoreCase(room.getStatus())) {
+            throw new IllegalArgumentException(
+                    "The selected room is disabled or under maintenance.");
+        }
+
+        if (startTime == null || endTime == null) {
+            throw new IllegalArgumentException(
+                    "Start and end times are required.");
+        }
+
+        if (!endTime.isAfter(startTime)) {
+            throw new IllegalArgumentException(
+                    "End time must be after start time.");
+        }
+
+        if (startTime.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException(
+                    "A booking cannot start in the past.");
+        }
+
+        if (!isRoomAvailable(
+                roomID, startTime, endTime, null)) {
+
+            throw new IllegalArgumentException(
+                    "The room is unavailable during the selected time.");
+        }
+
+        Booking booking = new Booking(
+                user,
+                room,
+                startTime,
+                endTime,
+                pricingStrategy,
+                paymentStrategy);
+
+        booking.setBookingID(generateBookingID());
+
+        double deposit = booking.calculateUpfrontCost();
+
+        if (paymentStrategy != null
+                && !booking.executePayment(deposit)) {
+
+            throw new IllegalStateException(
+                    "The upfront deposit payment was unsuccessful.");
+        }
+
+        activeBookings.add(booking);
+        saveBookings();
+
+        return booking;
+    }
+
+    public boolean isRoomAvailable(
+            String roomID,
+            LocalDateTime startTime,
+            LocalDateTime endTime) {
+
+        return isRoomAvailable(
+                roomID, startTime, endTime, null);
+    }
+
+    private boolean isRoomAvailable(
+            String roomID,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            Booking ignoredBooking) {
+
+        Room room = getRoom(roomID);
 
-	// Adds a room to the collection managed by the booking system.
+        if (room == null
+                || room.isMaintenance()
+                || "disabled".equalsIgnoreCase(room.getStatus())
+                || startTime == null
+                || endTime == null
+                || !endTime.isAfter(startTime)) {
+
+            return false;
+        }
+
+        for (Booking booking : activeBookings) {
+            if (booking == ignoredBooking
+                    || booking.isCancelled()) {
+                continue;
+            }
 
-	public boolean addRoom(Room room) {
-		if (room == null) {
-			return false;
-		}
+            boolean sameRoom =
+                    booking.getRoom()
+                            .getRoomID()
+                            .equalsIgnoreCase(roomID);
 
-		String roomID = normalize(room.getRoomID());
+            if (sameRoom
+                    && booking.overlaps(startTime, endTime)) {
+                return false;
+            }
+        }
 
-		if (rooms.containsKey(roomID)) {
-			return false;
-		}
+        return true;
+    }
 
-		rooms.put(roomID, room);
-		return true;
-	}
+    public Booking findBookingByUser(String userID) {
+        if (userID == null || userID.isBlank()) {
+            return null;
+        }
 
-	public Room getRoom(String roomID) {
-		if (roomID == null || roomID.isBlank()) {
-			return null;
-		}
+        for (Booking booking : activeBookings) {
+            if (!booking.isCancelled()
+                    && booking.getUser()
+                            .getUserID()
+                            .equalsIgnoreCase(userID)) {
 
-		return rooms.get(normalize(roomID));
-	}
+                return booking;
+            }
+        }
 
-	// Creates and stores a booking.
-	
-	public Booking createBooking(User user, String roomID, LocalDateTime startTime, LocalDateTime endTime,
-			PricingStrategy pricingStrategy, PaymentStrategy paymentStrategy) {
+        return null;
+    }
 
-		if (user == null) {
-			throw new IllegalArgumentException("User is required.");
-		}
+    public List<Booking> getBookingsForUser(String userID) {
+        List<Booking> userBookings = new ArrayList<>();
 
-		Room room = getRoom(roomID);
+        if (userID == null || userID.isBlank()) {
+            return userBookings;
+        }
 
-		if (room == null) {
-			throw new IllegalArgumentException("The selected room does not exist.");
-		}
+        for (Booking booking : activeBookings) {
+            if (booking.getUser()
+                    .getUserID()
+                    .equalsIgnoreCase(userID)) {
 
-		if (startTime == null || endTime == null) {
-			throw new IllegalArgumentException("Start and end times are required.");
-		}
+                userBookings.add(booking);
+            }
+        }
 
-		if (!endTime.isAfter(startTime)) {
-			throw new IllegalArgumentException("End time must be after start time.");
-		}
+        return userBookings;
+    }
 
-		if (startTime.isBefore(LocalDateTime.now())) {
-			throw new IllegalArgumentException("A booking cannot start in the past.");
-		}
+    public boolean modifyBooking(
+            String userID,
+            LocalDateTime newStart,
+            LocalDateTime newEnd) {
 
-		if (!isRoomAvailable(roomID, startTime, endTime, null)) {
-			throw new IllegalArgumentException("The room is unavailable during the selected time.");
-		}
+        Booking booking = findBookingByUser(userID);
 
-		Booking booking = new Booking(user, room, startTime, endTime, pricingStrategy, paymentStrategy);
+        if (booking == null
+                || newStart == null
+                || newEnd == null
+                || !newEnd.isAfter(newStart)
+                || newStart.isBefore(LocalDateTime.now())) {
 
-		double deposit = booking.calculateUpfrontCost();
+            return false;
+        }
 
-		// When a payment strategy is supplied, the one-hour deposit must be successfully paid before the booking is stored.
+        String roomID = booking.getRoom().getRoomID();
 
-		if (paymentStrategy != null && !booking.executePayment(deposit)) {
+        if (!isRoomAvailable(
+                roomID, newStart, newEnd, booking)) {
+            return false;
+        }
 
-			throw new IllegalStateException("The upfront deposit payment was unsuccessful.");
-		}
+        booking.modifyTimes(newStart, newEnd);
+        saveBookings();
 
-		activeBookings.add(booking);
-		return booking;
-	}
+        return true;
+    }
 
-	public boolean isRoomAvailable(String roomID, LocalDateTime startTime, LocalDateTime endTime) {
+    public boolean cancelBooking(String userID) {
+        Booking booking = findBookingByUser(userID);
 
-		return isRoomAvailable(roomID, startTime, endTime, null);
-	}
+        if (booking == null) {
+            return false;
+        }
 
-	private boolean isRoomAvailable(String roomID, LocalDateTime startTime, LocalDateTime endTime,
-			Booking ignoredBooking) {
+        if (booking.isCheckedIn()) {
+            booking.getRoom().release();
+            saveRooms();
+        }
 
-		if (getRoom(roomID) == null || startTime == null || endTime == null || !endTime.isAfter(startTime)) {
+        booking.cancel();
+        saveBookings();
 
-			return false;
-		}
+        return true;
+    }
 
-		for (Booking booking : activeBookings) {
+    public boolean extendBooking(
+            String userID,
+            int additionalHours) {
 
-			if (booking == ignoredBooking || booking.isCancelled()) {
-				continue;
-			}
+        Booking booking = findBookingByUser(userID);
 
-			boolean sameRoom = booking.getRoom().getRoomID().equalsIgnoreCase(roomID);
+        if (booking == null || additionalHours <= 0) {
+            return false;
+        }
 
-			if (sameRoom && booking.overlaps(startTime, endTime)) {
+        LocalDateTime proposedEnd =
+                booking.getEndTime().plusHours(additionalHours);
 
-				return false;
-			}
-		}
+        if (!isRoomAvailable(
+                booking.getRoom().getRoomID(),
+                booking.getStartTime(),
+                proposedEnd,
+                booking)) {
 
-		return true;
-	}
+            return false;
+        }
 
-	// Finds the first active booking belonging to a user.
-	
-	public Booking findBookingByUser(String userID) {
-		if (userID == null || userID.isBlank()) {
-			return null;
-		}
+        boolean extended =
+                booking.extendBooking(additionalHours);
 
-		for (Booking booking : activeBookings) {
-			if (!booking.isCancelled() && booking.getUser().getUserID().equalsIgnoreCase(userID)) {
+        if (extended) {
+            saveBookings();
+        }
 
-				return booking;
-			}
-		}
+        return extended;
+    }
 
-		return null;
-	}
+    @Override
+    public void update(String sensorData) {
+        if (sensorData == null || sensorData.isBlank()) {
+            return;
+        }
 
-	public List<Booking> getBookingsForUser(String userID) {
-		List<Booking> userBookings = new ArrayList<>();
+        String[] parts = sensorData.split(":");
 
-		if (userID == null || userID.isBlank()) {
-			return userBookings;
-		}
+        if (parts.length == 2
+                && "OCCUPIED".equalsIgnoreCase(parts[0])) {
 
-		for (Booking booking : activeBookings) {
-			if (booking.getUser().getUserID().equalsIgnoreCase(userID)) {
+            Room room = getRoom(parts[1]);
 
-				userBookings.add(booking);
-			}
-		}
+            if (room != null) {
+                room.reserve();
+                saveRooms();
+            }
 
-		return userBookings;
-	}
+            return;
+        }
 
-	public boolean modifyBooking(String userID, LocalDateTime newStart, LocalDateTime newEnd) {
+        if (parts.length == 2
+                && "EMPTY".equalsIgnoreCase(parts[0])) {
 
-		Booking booking = findBookingByUser(userID);
+            Room room = getRoom(parts[1]);
 
-		if (booking == null || newStart == null || newEnd == null || !newEnd.isAfter(newStart)
-				|| newStart.isBefore(LocalDateTime.now())) {
+            if (room != null) {
+                room.release();
+                saveRooms();
+            }
 
-			return false;
-		}
+            return;
+        }
 
-		String roomID = booking.getRoom().getRoomID();
+        if (parts.length == 3
+                && "BADGE_SCAN".equalsIgnoreCase(parts[0])) {
 
-		if (!isRoomAvailable(roomID, newStart, newEnd, booking)) {
+            processBadgeScan(parts[1], parts[2]);
+        }
+    }
 
-			return false;
-		}
+    private boolean processBadgeScan(
+            String roomID,
+            String userID) {
 
-		booking.modifyTimes(newStart, newEnd);
-		return true;
-	}
+        LocalDateTime now = LocalDateTime.now();
 
-	public boolean cancelBooking(String userID) {
-		Booking booking = findBookingByUser(userID);
+        for (Booking booking : activeBookings) {
+            if (booking.isCancelled()
+                    || booking.isCheckedIn()) {
+                continue;
+            }
+
+            boolean correctRoom =
+                    booking.getRoom()
+                            .getRoomID()
+                            .equalsIgnoreCase(roomID);
 
-		if (booking == null) {
-			return false;
-		}
+            boolean correctUser =
+                    booking.getUser()
+                            .getUserID()
+                            .equalsIgnoreCase(userID);
 
+            LocalDateTime earliestCheckIn =
+                    booking.getStartTime().minusMinutes(30);
+
+            LocalDateTime deadline =
+                    booking.getStartTime().plusMinutes(30);
+
+            boolean withinCheckInPeriod =
+                    !now.isBefore(earliestCheckIn)
+                            && !now.isAfter(deadline);
+
+            if (correctRoom
+                    && correctUser
+                    && withinCheckInPeriod) {
+
+                booking.checkIn();
+                booking.getRoom().reserve();
+
+                saveBookings();
+                saveRooms();
+
+                return true;
+            }
+        }
 
-		// Release the room only if the user had physically checked in. Future bookings do not place the room in OccupiedState.
-		
-		if (booking.isCheckedIn()) {
-			booking.getRoom().release();
-		}
+        return false;
+    }
 
-		booking.cancel();
-		return true;
-	}
+    public void checkTimeouts() {
+        LocalDateTime now = LocalDateTime.now();
+        boolean changed = false;
 
-	public boolean extendBooking(String userID, int additionalHours) {
-
-		Booking booking = findBookingByUser(userID);
-
-		if (booking == null || additionalHours <= 0) {
-			return false;
-		}
-
-		LocalDateTime proposedEnd = booking.getEndTime().plusHours(additionalHours);
-
-		if (!isRoomAvailable(booking.getRoom().getRoomID(), booking.getStartTime(), proposedEnd, booking)) {
-
-			return false;
-		}
-
-		return booking.extendBooking(additionalHours);
-	}
-
-	// Handles occupancy and badge messages sent by HardwareSensor.
-	
-	@Override
-	public void update(String sensorData) {
-		if (sensorData == null || sensorData.isBlank()) {
-			return;
-		}
-
-		String[] parts = sensorData.split(":");
-
-		if (parts.length == 2 && "OCCUPIED".equalsIgnoreCase(parts[0])) {
-
-			Room room = getRoom(parts[1]);
-
-			if (room != null) {
-				room.reserve();
-			}
-
-			return;
-		}
-
-		if (parts.length == 3 && "BADGE_SCAN".equalsIgnoreCase(parts[0])) {
-
-			String roomID = parts[1];
-			String userID = parts[2];
-
-			processBadgeScan(roomID, userID);
-		}
-	}
-
-	private boolean processBadgeScan(String roomID, String userID) {
-
-		LocalDateTime now = LocalDateTime.now();
-
-		for (Booking booking : activeBookings) {
-
-			if (booking.isCancelled() || booking.isCheckedIn()) {
-				continue;
-			}
-
-			boolean correctRoom = booking.getRoom().getRoomID().equalsIgnoreCase(roomID);
-
-			boolean correctUser = booking.getUser().getUserID().equalsIgnoreCase(userID);
-
-			// Permit check-in beginning 30 minutes before the booking and ending 30 minutes after the scheduled start.
-			
-			LocalDateTime earliestCheckIn = booking.getStartTime().minusMinutes(30);
-
-			LocalDateTime deadline = booking.getStartTime().plusMinutes(30);
-
-			boolean withinCheckInPeriod = !now.isBefore(earliestCheckIn) && !now.isAfter(deadline);
-
-			if (correctRoom && correctUser && withinCheckInPeriod) {
-
-				booking.checkIn();
-				booking.getRoom().reserve();
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	// 	Forfeits the one-hour deposit when the user has not checked in within 30 minutes of the scheduled start time.
-	
-	public void checkTimeouts() {
-		LocalDateTime now = LocalDateTime.now();
-
-		for (Booking booking : activeBookings) {
-
-			if (booking.isCancelled() || booking.isCheckedIn() || booking.isDepositForfeited()) {
-				continue;
-			}
-
-			LocalDateTime deadline = booking.getStartTime().plusMinutes(30);
-
-			if (now.isAfter(deadline)) {
-				booking.forfeitDeposit();
-			}
-		}
-	}
-
-	public List<Booking> getActiveBookings() {
-		return Collections.unmodifiableList(activeBookings);
-	}
-
-	public Map<String, Room> getRooms() {
-		return Collections.unmodifiableMap(rooms);
-	}
-
-	private String normalize(String value) {
-		return value.trim().toLowerCase();
-	}
+        for (Booking booking : activeBookings) {
+            if (booking.isCancelled()
+                    || booking.isCheckedIn()
+                    || booking.isDepositForfeited()) {
+                continue;
+            }
+
+            LocalDateTime deadline =
+                    booking.getStartTime().plusMinutes(30);
+
+            if (now.isAfter(deadline)) {
+                booking.forfeitDeposit();
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            saveBookings();
+        }
+    }
+
+    public List<Booking> getActiveBookings() {
+        return Collections.unmodifiableList(activeBookings);
+    }
+
+    public Map<String, Room> getRooms() {
+        return Collections.unmodifiableMap(rooms);
+    }
+
+    private void loadRooms() {
+        for (String[] row
+                : CsvDatabase.read(CsvDatabase.ROOMS_FILE)) {
+
+            if (row.length < 7) {
+                continue;
+            }
+
+            try {
+                Room room = new Room(
+                        row[0].trim(),
+                        Integer.parseInt(row[1].trim()),
+                        row[2].trim(),
+                        row[3].trim(),
+                        Boolean.parseBoolean(row[4].trim()),
+                        Boolean.parseBoolean(row[5].trim()),
+                        row[6].trim());
+
+                rooms.put(
+                        normalize(room.getRoomID()),
+                        room);
+            } catch (RuntimeException exception) {
+                System.err.println(
+                        "Skipped invalid room row: " + row[0]);
+            }
+        }
+    }
+
+    private void loadBookings() {
+        UserFactory userFactory = new UserFactory();
+
+        for (String[] row
+                : CsvDatabase.read(CsvDatabase.BOOKINGS_FILE)) {
+
+            if (row.length < 11) {
+                continue;
+            }
+
+            try {
+                String bookingID = row[0].trim();
+                User user = userFactory.getUserByID(row[1].trim());
+                Room room = getRoom(row[2].trim());
+
+                if (user == null || room == null) {
+                    continue;
+                }
+
+                LocalDateTime startTime =
+                        LocalDateTime.parse(
+                                row[3].trim(),
+                                CSV_DATE_FORMAT);
+
+                LocalDateTime endTime =
+                        LocalDateTime.parse(
+                                row[4].trim(),
+                                CSV_DATE_FORMAT);
+
+                boolean checkedIn =
+                        Boolean.parseBoolean(row[5].trim());
+
+                boolean cancelled =
+                        Boolean.parseBoolean(row[6].trim());
+
+                boolean depositForfeited =
+                        Boolean.parseBoolean(row[7].trim());
+
+                double upfrontDeposit =
+                        Double.parseDouble(row[8].trim());
+
+                Booking booking = new Booking(
+                        bookingID,
+                        user,
+                        room,
+                        startTime,
+                        endTime,
+                        pricingFor(user),
+                        null,
+                        checkedIn,
+                        cancelled,
+                        depositForfeited,
+                        upfrontDeposit);
+
+                activeBookings.add(booking);
+            } catch (RuntimeException exception) {
+                System.err.println(
+                        "Skipped invalid booking row: " + row[0]);
+            }
+        }
+    }
+
+    private void saveRooms() {
+        List<String> rows = new ArrayList<>();
+
+        for (Room room : rooms.values()) {
+            rows.add(String.join(",",
+                    CsvDatabase.clean(room.getRoomID()),
+                    Integer.toString(room.getCapacity()),
+                    CsvDatabase.clean(room.getBuilding()),
+                    CsvDatabase.clean(room.getRoomNumber()),
+                    Boolean.toString(room.isOccupied()),
+                    Boolean.toString(room.isMaintenance()),
+                    CsvDatabase.clean(room.getStatus())));
+        }
+
+        CsvDatabase.replaceRows(
+                CsvDatabase.ROOMS_FILE,
+                "roomID,capacity,building,room,"
+                        + "occupied,maintenance,status",
+                rows);
+    }
+
+    private void saveBookings() {
+        List<String> rows = new ArrayList<>();
+
+        for (Booking booking : activeBookings) {
+            rows.add(String.join(",",
+                    CsvDatabase.clean(booking.getBookingID()),
+                    CsvDatabase.clean(
+                            booking.getUser().getUserID()),
+                    CsvDatabase.clean(
+                            booking.getRoom().getRoomID()),
+                    booking.getStartTime()
+                            .format(CSV_DATE_FORMAT),
+                    booking.getEndTime()
+                            .format(CSV_DATE_FORMAT),
+                    Boolean.toString(booking.isCheckedIn()),
+                    Boolean.toString(booking.isCancelled()),
+                    Boolean.toString(
+                            booking.isDepositForfeited()),
+                    String.format(
+                            java.util.Locale.US,
+                            "%.2f",
+                            booking.getUpfrontDeposit()),
+                    String.format(
+                            java.util.Locale.US,
+                            "%.2f",
+                            booking.getPricingStrategy()
+                                    .getHourlyRate()),
+                    paymentTypeFor(booking)));
+        }
+
+        CsvDatabase.replaceRows(
+                CsvDatabase.BOOKINGS_FILE,
+                "bookingID,userID,roomID,startTime,endTime,"
+                        + "checkedIn,cancelled,depositForfeited,"
+                        + "upfrontDeposit,hourlyRate,paymentType",
+                rows);
+    }
+
+    private String generateBookingID() {
+        int largestID = 0;
+
+        for (Booking booking : activeBookings) {
+            String bookingID = booking.getBookingID();
+
+            if (bookingID == null
+                    || !bookingID.matches("B\\d+")) {
+                continue;
+            }
+
+            largestID = Math.max(
+                    largestID,
+                    Integer.parseInt(bookingID.substring(1)));
+        }
+
+        return String.format("B%03d", largestID + 1);
+    }
+
+    private PricingStrategy pricingFor(User user) {
+        switch (user.getAccountType().toLowerCase()) {
+        case "student":
+            return new StudentPricing();
+
+        case "faculty":
+            return new FacultyPricing();
+
+        case "staff":
+            return new StaffPricing();
+
+        case "partner":
+            return new PartnerPricing();
+
+        default:
+            throw new IllegalArgumentException(
+                    "Unknown account type.");
+        }
+    }
+
+    private String paymentTypeFor(Booking booking) {
+        if (booking.getPaymentStrategy() == null) {
+            return "";
+        }
+
+        String name = booking.getPaymentStrategy()
+                .getClass()
+                .getSimpleName();
+
+        if ("CreditCardPayment".equals(name)) {
+            return "credit_card";
+        }
+
+        if ("DebitCardPayment".equals(name)) {
+            return "debit_card";
+        }
+
+        if ("InstitutionBilling".equals(name)) {
+            return "institution_billing";
+        }
+
+        return name.toLowerCase();
+    }
+
+    private String normalize(String value) {
+        return value.trim().toLowerCase();
+    }
 }

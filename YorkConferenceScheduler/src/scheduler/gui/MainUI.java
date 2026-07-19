@@ -15,6 +15,7 @@ public class MainUI extends JFrame {
     public static final String REGISTRATION = "REGISTRATION";
     public static final String USER_DASHBOARD = "USER_DASHBOARD";
     public static final String ADMIN_DASHBOARD = "ADMIN_DASHBOARD";
+    public static final String CHIEF_COORDINATOR_DASHBOARD = "CHIEF_COORDINATOR_DASHBOARD";
     public static final String ROOM_MANAGEMENT = "ROOM_MANAGEMENT";
     public static final String ROOM_BOOKING = "ROOM_BOOKING";
     public static final String MY_BOOKINGS = "MY_BOOKINGS";
@@ -39,6 +40,7 @@ public class MainUI extends JFrame {
         contentPanel.add(new RegistrationPanel(this), REGISTRATION);
         contentPanel.add(new UserDashboardPanel(this), USER_DASHBOARD);
         contentPanel.add(new AdminDashboardPanel(this), ADMIN_DASHBOARD);
+        contentPanel.add(new ChiefCoordinatorDashboardPanel(this), CHIEF_COORDINATOR_DASHBOARD);
         contentPanel.add(new RoomManagementPanel(this), ROOM_MANAGEMENT);
         contentPanel.add(new RoomBookingPanel(this), ROOM_BOOKING);
         contentPanel.add(new MyBookingsPanel(this), MY_BOOKINGS);

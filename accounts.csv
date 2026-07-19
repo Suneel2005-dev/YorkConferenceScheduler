@@ -3,3 +3,4 @@ U001,user1@example.com,password_1,ORG001,student,true
 U002,user2@example.com,password_2,ORG001,faculty,false
 U003,user3@example.com,password_3,ORG002,staff,false
 U004,user4@example.com,password_4,ORG002,partner,false
+admin1,admin1@yorku.ca,KLNj*cPJo7#l,ADMIN,administrator,true

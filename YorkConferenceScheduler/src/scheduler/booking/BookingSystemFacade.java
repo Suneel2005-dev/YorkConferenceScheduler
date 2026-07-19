@@ -23,15 +23,9 @@ public class BookingSystemFacade {
 	private final BookingManager bookingManager;
 
 	private BookingSystemFacade() {
-		userFactory = new UserFactory();
-		bookingManager = new BookingManager();
-
-		bookingManager.addRoom(new Room("R101", 20, "First Floor"));
-
-		bookingManager.addRoom(new Room("R205", 40, "Second Floor"));
-
-		bookingManager.addRoom(new Room("R310", 60, "Third Floor"));
-	}
+        userFactory = new UserFactory();
+        bookingManager = new BookingManager();
+    }
 
 	public static BookingSystemFacade getInstance() {
 		if (instance == null) {
