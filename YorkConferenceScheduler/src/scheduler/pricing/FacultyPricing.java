@@ -1,4 +1,4 @@
-package pricing;
+package scheduler.pricing;
 
 public class FacultyPricing implements PricingStrategy{
 

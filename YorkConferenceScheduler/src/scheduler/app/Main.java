@@ -1,7 +1,7 @@
-package app;
+package scheduler.app;
 
 import javax.swing.SwingUtilities;
-import gui.MainUI;
+import scheduler.gui.MainUI;
 
 public class Main {
 

@@ -1,4 +1,4 @@
-package user;
+package scheduler.user;
 
 public class Staff extends User {
 

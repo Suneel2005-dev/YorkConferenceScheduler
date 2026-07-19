@@ -1,4 +1,4 @@
-package room;
+package scheduler.room;
 
 public interface RoomState {
 

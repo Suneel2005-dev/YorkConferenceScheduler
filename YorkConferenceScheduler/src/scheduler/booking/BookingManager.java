@@ -1,8 +1,8 @@
-package booking;
+package scheduler.booking;
 
 import java.util.List;
-import booking.Booking;
-import sensor.SensorObserver;
+import scheduler.booking.Booking;
+import scheduler.sensor.SensorObserver;
 
 public class BookingManager {
     

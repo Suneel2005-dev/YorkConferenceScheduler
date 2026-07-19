@@ -1,8 +1,8 @@
-package sensor;
+package scheduler.sensor;
 
 import java.util.ArrayList;
 import java.util.List;
-import sensor.SensorObserver;
+import scheduler.sensor.SensorObserver;
 
 public class HardwareSensor {
 

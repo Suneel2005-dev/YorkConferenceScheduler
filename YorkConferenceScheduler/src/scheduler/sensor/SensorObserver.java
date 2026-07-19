@@ -1,4 +1,4 @@
-package sensor;
+package scheduler.sensor;
 
 public interface SensorObserver {
 

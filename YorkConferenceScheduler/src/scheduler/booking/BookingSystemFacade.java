@@ -1,8 +1,8 @@
-package booking;
+package scheduler.booking;
 
-import booking.BookingManager;
-import user.UserFactory;
-import user.ChiefEventCoordinator;
+import scheduler.booking.BookingManager;
+import scheduler.user.UserFactory;
+import scheduler.user.ChiefEventCoordinator;
 
 import java.time.LocalDateTime;
 

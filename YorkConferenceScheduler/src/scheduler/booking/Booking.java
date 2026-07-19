@@ -1,11 +1,11 @@
-package booking;
+package scheduler.booking;
 
 import java.time.*;
 
-import payment.PaymentStrategy;
-import pricing.PricingStrategy;
-import user.User;
-import room.Room;
+import scheduler.payment.PaymentStrategy;
+import scheduler.pricing.PricingStrategy;
+import scheduler.user.User;
+import scheduler.room.Room;
 
 public class Booking {
     

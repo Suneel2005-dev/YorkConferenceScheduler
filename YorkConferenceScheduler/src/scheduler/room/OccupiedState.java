@@ -1,4 +1,4 @@
-package room;
+package scheduler.room;
 
 public class OccupiedState implements RoomState {
 

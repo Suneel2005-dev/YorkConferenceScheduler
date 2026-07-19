@@ -1,4 +1,4 @@
-package payment;
+package scheduler.payment;
 
 public interface PaymentStrategy {
 	

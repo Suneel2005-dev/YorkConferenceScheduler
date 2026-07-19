@@ -1,6 +1,6 @@
-package user;
+package scheduler.user;
 
-import room.RoomState;
+import scheduler.room.RoomState;
 
 public class Administrator {
 

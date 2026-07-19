@@ -1,4 +1,4 @@
-package user;
+package scheduler.user;
 
 import java.util.Map;
 
