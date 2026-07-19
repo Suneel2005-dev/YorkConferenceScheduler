@@ -1,8 +1,12 @@
 package scheduler.user;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class UserFactory {
+
+	private static final Map<String, User> usersByID = new HashMap<>();
+	private static final Map<String, User> usersByEmail = new HashMap<>();
 
 	public User createUser(String type, Map<String, Object> details) {
 
@@ -22,25 +26,71 @@ public class UserFactory {
 		validateEmail(email);
 		validatePassword(password);
 
+		String normalizedUserID = userID.toLowerCase();
+		String normalizedEmail = email.toLowerCase();
+
+		if (usersByID.containsKey(normalizedUserID)) {
+			throw new IllegalArgumentException("A user with this user ID already exists.");
+		}
+
+		if (usersByEmail.containsKey(normalizedEmail)) {
+			throw new IllegalArgumentException("An account with this email already exists.");
+		}
+
 		boolean universityAccount = isUniversityAccount(type);
 		boolean verified = !universityAccount || isYorkEmail(email);
 
+		User user;
+
 		switch (type.trim().toLowerCase()) {
 		case "student":
-			return new Student(userID, email, password, orgID, verified);
+			user = new Student(userID, email, password, orgID, verified);
+			break;
 
 		case "faculty":
-			return new Faculty(userID, email, password, orgID, verified);
+			user = new Faculty(userID, email, password, orgID, verified);
+			break;
 
 		case "staff":
-			return new Staff(userID, email, password, orgID, verified);
+			user = new Staff(userID, email, password, orgID, verified);
+			break;
 
 		case "partner":
-			return new Partner(userID, email, password, orgID, true);
+			user = new Partner(userID, email, password, orgID, true);
+			break;
 
 		default:
 			throw new IllegalArgumentException("Unsupported account type: " + type);
 		}
+
+		usersByID.put(normalizedUserID, user);
+		usersByEmail.put(normalizedEmail, user);
+
+		return user;
+	}
+
+	public User getUserByID(String userID) {
+		if (userID == null || userID.isBlank()) {
+			return null;
+		}
+
+		return usersByID.get(userID.trim().toLowerCase());
+	}
+
+	public User getUserByEmail(String email) {
+		if (email == null || email.isBlank()) {
+			return null;
+		}
+
+		return usersByEmail.get(email.trim().toLowerCase());
+	}
+
+	public boolean isEmailRegistered(String email) {
+		if (email == null || email.isBlank()) {
+			return false;
+		}
+
+		return usersByEmail.containsKey(email.trim().toLowerCase());
 	}
 
 	public boolean isValidEmail(String email) {
@@ -69,7 +119,6 @@ public class UserFactory {
 		Object value = details.get(key);
 
 		if (value == null || value.toString().trim().isEmpty()) {
-
 			throw new IllegalArgumentException(key + " is required.");
 		}
 

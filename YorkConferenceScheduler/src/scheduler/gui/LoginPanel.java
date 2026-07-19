@@ -15,87 +15,117 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
+import javax.swing.JOptionPane;
+
+import scheduler.user.User;
+import scheduler.user.UserFactory;
+
 public class LoginPanel extends JPanel {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    private final JTextField emailField;
-    private final JPasswordField passwordField;
-    private final JComboBox<String> roleBox;
+	private final JTextField emailField;
+	private final JPasswordField passwordField;
+	private final JComboBox<String> roleBox;
 
-    public LoginPanel(MainUI mainUI) {
-        setLayout(new BorderLayout(20, 20));
-        setBorder(BorderFactory.createEmptyBorder(40, 80, 40, 80));
+	public LoginPanel(MainUI mainUI) {
+		setLayout(new BorderLayout(20, 20));
+		setBorder(BorderFactory.createEmptyBorder(40, 80, 40, 80));
 
-        JLabel titleLabel = new JLabel("Room Booking System", JLabel.CENTER);
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 28f));
-        add(titleLabel, BorderLayout.NORTH);
+		JLabel titleLabel = new JLabel("Room Booking System", JLabel.CENTER);
+		titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 28f));
+		add(titleLabel, BorderLayout.NORTH);
 
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Login"));
+		JPanel formPanel = new JPanel(new GridBagLayout());
+		formPanel.setBorder(BorderFactory.createTitledBorder("Login"));
 
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.insets = new Insets(10, 10, 10, 10);
-        constraints.fill = GridBagConstraints.HORIZONTAL;
+		GridBagConstraints constraints = new GridBagConstraints();
+		constraints.insets = new Insets(10, 10, 10, 10);
+		constraints.fill = GridBagConstraints.HORIZONTAL;
 
-        emailField = new JTextField(24);
-        passwordField = new JPasswordField(24);
-        roleBox = new JComboBox<>(new String[] {
-                "Student", "Faculty", "Staff", "Partner", "Administrator",
-                "Chief Event Coordinator"
-        });
+		emailField = new JTextField(24);
+		passwordField = new JPasswordField(24);
+		roleBox = new JComboBox<>(
+				new String[] { "Student", "Faculty", "Staff", "Partner", "Administrator", "Chief Event Coordinator" });
 
-        addFormRow(formPanel, constraints, 0, "Email:", emailField);
-        addFormRow(formPanel, constraints, 1, "Password:", passwordField);
-        addFormRow(formPanel, constraints, 2, "Role:", roleBox);
+		addFormRow(formPanel, constraints, 0, "Email:", emailField);
+		addFormRow(formPanel, constraints, 1, "Password:", passwordField);
+		addFormRow(formPanel, constraints, 2, "Role:", roleBox);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
 
-        JButton loginButton = new JButton("Login");
-        JButton registerButton = new JButton("Create Account");
+		JButton loginButton = new JButton("Login");
+		JButton registerButton = new JButton("Create Account");
 
-        loginButton.addActionListener(event -> {
-            String selectedRole = (String) roleBox.getSelectedItem();
+		loginButton.addActionListener(event -> {
 
-            if ("Administrator".equals(selectedRole)
-                    || "Chief Event Coordinator".equals(selectedRole)) {
-                mainUI.showPanel(MainUI.ADMIN_DASHBOARD);
-            } else {
-                mainUI.showPanel(MainUI.USER_DASHBOARD);
-            }
-        });
+			String email = emailField.getText().trim();
+			String password = new String(passwordField.getPassword());
+			String selectedRole = (String) roleBox.getSelectedItem();
 
-        registerButton.addActionListener(
-                event -> mainUI.showPanel(MainUI.REGISTRATION));
+			try {
+				if (email.isEmpty() || password.isEmpty()) {
+					throw new IllegalArgumentException("Email and password are required.");
+				}
 
-        buttonPanel.add(loginButton);
-        buttonPanel.add(registerButton);
+				if ("Administrator".equals(selectedRole) || "Chief Event Coordinator".equals(selectedRole)) {
 
-        constraints.gridx = 0;
-        constraints.gridy = 3;
-        constraints.gridwidth = 2;
-        formPanel.add(buttonPanel, constraints);
+					JOptionPane.showMessageDialog(this, "Administrator login is not connected yet.", "Login Error",
+							JOptionPane.ERROR_MESSAGE);
 
-        add(formPanel, BorderLayout.CENTER);
-    }
+					return;
+				}
 
-    private void addFormRow(
-            JPanel panel,
-            GridBagConstraints constraints,
-            int row,
-            String labelText,
-            java.awt.Component component) {
+				UserFactory factory = new UserFactory();
+				User user = factory.getUserByEmail(email);
 
-        constraints.gridx = 0;
-        constraints.gridy = row;
-        constraints.gridwidth = 1;
-        constraints.weightx = 0;
+				if (user == null || !user.checkPassword(password)) {
+					throw new IllegalArgumentException("Invalid email or password.");
+				}
 
-        panel.add(new JLabel(labelText), constraints);
+				if (!user.getAccountType().equalsIgnoreCase(selectedRole)) {
+					throw new IllegalArgumentException("The selected role does not match this account.");
+				}
 
-        constraints.gridx = 1;
-        constraints.weightx = 1;
+				if (!user.isVerified()) {
+					throw new IllegalArgumentException("This university account has not been verified.");
+				}
 
-        panel.add(component, constraints);
-    }
+				JOptionPane.showMessageDialog(this, "Login successful.", "Login", JOptionPane.INFORMATION_MESSAGE);
+
+				mainUI.showPanel(MainUI.USER_DASHBOARD);
+
+			} catch (IllegalArgumentException ex) {
+				JOptionPane.showMessageDialog(this, ex.getMessage(), "Login Error", JOptionPane.ERROR_MESSAGE);
+			}
+		});
+
+		registerButton.addActionListener(event -> mainUI.showPanel(MainUI.REGISTRATION));
+
+		buttonPanel.add(loginButton);
+		buttonPanel.add(registerButton);
+
+		constraints.gridx = 0;
+		constraints.gridy = 3;
+		constraints.gridwidth = 2;
+		formPanel.add(buttonPanel, constraints);
+
+		add(formPanel, BorderLayout.CENTER);
+	}
+
+	private void addFormRow(JPanel panel, GridBagConstraints constraints, int row, String labelText,
+			java.awt.Component component) {
+
+		constraints.gridx = 0;
+		constraints.gridy = row;
+		constraints.gridwidth = 1;
+		constraints.weightx = 0;
+
+		panel.add(new JLabel(labelText), constraints);
+
+		constraints.gridx = 1;
+		constraints.weightx = 1;
+
+		panel.add(component, constraints);
+	}
 }
