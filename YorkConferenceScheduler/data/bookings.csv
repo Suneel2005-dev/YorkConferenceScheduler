@@ -1,0 +1,9 @@
+bookingID,userID,roomID,startTime,endTime,checkedIn,cancelled,depositForfeited,upfrontDeposit,hourlyRate,paymentType
+B001,U001,R001,2026-06-15 09:00:00,2026-06-15 11:00:00,true,false,false,20.00,20.00,credit_card
+B002,U002,R002,2026-06-15 14:00:00,2026-06-15 16:30:00,true,false,false,30.00,30.00,debit_card
+B003,U003,R003,2026-06-16 10:00:00,2026-06-16 12:00:00,false,true,true,40.00,40.00,credit_card
+B004,U004,R001,2026-06-16 15:00:00,2026-06-16 17:00:00,true,false,false,50.00,50.00,paypal
+B005,U001,R004,2026-06-17 08:00:00,2026-06-17 10:00:00,true,false,false,20.00,20.00,credit_card
+B006,U002,R002,2026-06-17 13:00:00,2026-06-17 15:30:00,false,false,false,30.00,30.00,debit_card
+B007,U003,R005,2026-06-18 09:30:00,2026-06-18 11:30:00,true,false,false,40.00,40.00,credit_card
+B008,U004,R003,2026-06-18 14:00:00,2026-06-18 18:00:00,false,true,false,50.00,50.00,bank_transfer

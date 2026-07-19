@@ -1,0 +1,6 @@
+roomID,capacity,building,room,occupied,maintenance,status
+R001,30,Vari Hall,1001,false,false,enabled
+R002,50,Vari Hall,2015,true,false,enabled
+R003,25,Kaneff Centre,3012,false,true,disabled
+R004,100,Bergeron Centre,1005,false,false,enabled
+R005,15,Scott Library,4002,true,false,enabled
