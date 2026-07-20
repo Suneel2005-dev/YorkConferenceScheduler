@@ -1,5 +1,7 @@
 package scheduler.gui;
 
+import java.time.LocalDateTime;
+
 import java.awt.CardLayout;
 import java.awt.Dimension;
 
@@ -27,6 +29,7 @@ public class MainUI extends JFrame {
     private final CardLayout cardLayout;
     private final JPanel contentPanel;
     private final MyBookingsPanel myBookingsPanel;
+    private final PaymentPanel paymentPanel;
 
     private User currentUser;
 
@@ -41,6 +44,7 @@ public class MainUI extends JFrame {
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
         myBookingsPanel = new MyBookingsPanel(this);
+        paymentPanel = new PaymentPanel(this);
 
         contentPanel.add(new LoginPanel(this), LOGIN);
         contentPanel.add(new RegistrationPanel(this), REGISTRATION);
@@ -50,7 +54,7 @@ public class MainUI extends JFrame {
         contentPanel.add(new RoomManagementPanel(this), ROOM_MANAGEMENT);
         contentPanel.add(new RoomBookingPanel(this), ROOM_BOOKING);
         contentPanel.add(myBookingsPanel, MY_BOOKINGS);
-        contentPanel.add(new PaymentPanel(this), PAYMENT);
+        contentPanel.add(paymentPanel, PAYMENT);
         contentPanel.add(new SensorPanel(this), SENSOR);
 
         setContentPane(contentPanel);
@@ -86,6 +90,19 @@ public class MainUI extends JFrame {
     public void showAdministratorBookings() {
         myBookingsPanel.setAdministratorMode(true);
         showPanel(MY_BOOKINGS);
+    }
+
+    public void showPaymentPanel(
+            String roomID,
+            LocalDateTime startTime,
+            int hours) {
+
+        paymentPanel.setPendingBooking(
+                roomID,
+                startTime,
+                hours);
+
+        showPanel(PAYMENT);
     }
 
     public void logout() {
