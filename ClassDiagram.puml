@@ -2,7 +2,6 @@
 title Room Booking System Class Diagram
 
 skinparam classAttributeIconSize 0
-skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
 
