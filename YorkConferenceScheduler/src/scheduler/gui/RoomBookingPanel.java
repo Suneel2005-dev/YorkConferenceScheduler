@@ -64,7 +64,7 @@ public class RoomBookingPanel extends JPanel {
         });
 
         backButton.addActionListener(
-                event -> mainUI.showPanel(MainUI.USER_DASHBOARD));
+                event -> mainUI.showUserBookings());
 
         buttonPanel.add(continueButton);
         buttonPanel.add(backButton);
