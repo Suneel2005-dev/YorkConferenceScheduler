@@ -1,5 +1,5 @@
-@startuml
-title Room Booking System Class Diagram
+@startuml York Conference Scheduler
+title York Conference Scheduler - Class Diagram
 
 skinparam classAttributeIconSize 0
 skinparam linetype ortho

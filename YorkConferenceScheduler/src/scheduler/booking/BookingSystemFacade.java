@@ -14,7 +14,6 @@ import scheduler.pricing.StudentPricing;
 import scheduler.room.Room;
 import scheduler.user.User;
 import scheduler.user.UserFactory;
-import scheduler.booking.Booking;
 
 public class BookingSystemFacade {
 
