@@ -1,0 +1,550 @@
+@startuml
+title Room Booking System Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam shadowing false
+
+package "scheduler.app" {
+
+    class Main {
+        +{static} main(args: String[]): void
+    }
+}
+
+package "scheduler.user" {
+
+    abstract class User {
+        #userID: String
+        #email: String
+        #password: String
+        #orgID: String
+        #isVerified: boolean
+
+        +User()
+        +User(userID: String, email: String, password: String,
+              orgID: String, isVerified: boolean)
+
+        +getUserID(): String
+        +getEmail(): String
+        +getPassword(): String
+        +getOrgID(): String
+        +isVerified(): boolean
+        +setVerified(verified: boolean): void
+        +checkPassword(enteredPassword: String): boolean
+        +getAccountType(): String
+    }
+
+    class Student {
+        +Student()
+        +Student(userID: String, email: String, password: String,
+                 studentNumber: String, isVerified: boolean)
+    }
+
+    class Faculty {
+        +Faculty()
+        +Faculty(userID: String, email: String, password: String,
+                 organizationID: String, isVerified: boolean)
+    }
+
+    class Staff {
+        +Staff()
+        +Staff(userID: String, email: String, password: String,
+               organizationID: String, isVerified: boolean)
+    }
+
+    class Partner {
+        +Partner()
+        +Partner(userID: String, email: String, password: String,
+                 organizationID: String, isVerified: boolean)
+    }
+
+    class Administrator {
+        -adminID: String
+        -email: String
+        -rooms: Map<String, Room>
+        -{static} ACCOUNTS_FILE: Path
+
+        +Administrator()
+        +Administrator(adminID: String, email: String, password: String)
+
+        +{static} authenticate(email: String, password: String): Administrator
+        +addRoom(roomID: String, capacity: int, location: String): void
+        +setRoomState(roomID: String, state: RoomState): void
+        +getRoom(roomID: String): Room
+        +getRooms(): Map<String, Room>
+        +getAdminID(): String
+        +getEmail(): String
+    }
+
+    class ChiefEventCoordinator <<Singleton>> {
+        -{static} instance: ChiefEventCoordinator
+        -coordID: String
+        -{static} COORDINATOR_EMAIL: String
+        -{static} COORDINATOR_PASSWORD: String
+        -{static} ACCOUNTS_FILE: Path
+        -{static} RANDOM: SecureRandom
+
+        -ChiefEventCoordinator()
+        +{static} getInstance(): ChiefEventCoordinator
+        +authenticate(email: String, password: String): boolean
+        +generateAdminAccount(email: String, adminID: String): Administrator
+    }
+
+    class UserFactory <<Factory>> {
+        -{static} usersByID: Map<String, User>
+        -{static} usersByEmail: Map<String, User>
+
+        +createUser(type: String, details: Map<String, Object>): User
+        +getUserByID(userID: String): User
+        +getUserByEmail(email: String): User
+        +isEmailRegistered(email: String): boolean
+        +isValidEmail(email: String): boolean
+        +isStrongPassword(password: String): boolean
+    }
+
+    User <|-- Student
+    User <|-- Faculty
+    User <|-- Staff
+    User <|-- Partner
+    User <|-- Administrator
+
+    UserFactory ..> User : creates
+    UserFactory ..> Student
+    UserFactory ..> Faculty
+    UserFactory ..> Staff
+    UserFactory ..> Partner
+
+    ChiefEventCoordinator ..> Administrator : creates
+}
+
+package "scheduler.room" {
+
+    interface RoomState <<State>> {
+        +handleReserve(room: Room): void
+        +handleRelease(room: Room): void
+    }
+
+    class AvailableState {
+        +handleReserve(room: Room): void
+        +handleRelease(room: Room): void
+    }
+
+    class OccupiedState {
+        +handleReserve(room: Room): void
+        +handleRelease(room: Room): void
+    }
+
+    class MaintenanceState {
+        +handleReserve(room: Room): void
+        +handleRelease(room: Room): void
+    }
+
+    class Room {
+        -roomID: String
+        -capacity: int
+        -building: String
+        -roomNumber: String
+        -maintenance: boolean
+        -status: String
+        -currentState: RoomState
+
+        +Room()
+        +Room(roomID: String, capacity: int, location: String)
+        +Room(roomID: String, capacity: int, building: String,
+              roomNumber: String, maintenance: boolean, status: String)
+
+        +getRoomID(): String
+        +getCapacity(): int
+        +getBuilding(): String
+        +getRoomNumber(): String
+        +getLocation(): String
+        +isOccupied(): boolean
+        +isMaintenance(): boolean
+        +getStatus(): String
+        +getCurrentState(): RoomState
+        +setState(state: RoomState): void
+        +reserve(): void
+        +release(): void
+        +toString(): String
+    }
+
+    RoomState <|.. AvailableState
+    RoomState <|.. OccupiedState
+    RoomState <|.. MaintenanceState
+
+    Room *-- "1" RoomState : currentState
+}
+
+package "scheduler.pricing" {
+
+    interface PricingStrategy <<Strategy>> {
+        +getHourlyRate(): double
+    }
+
+    class StudentPricing {
+        +getHourlyRate(): double
+    }
+
+    class FacultyPricing {
+        +getHourlyRate(): double
+    }
+
+    class StaffPricing {
+        +getHourlyRate(): double
+    }
+
+    class PartnerPricing {
+        +getHourlyRate(): double
+    }
+
+    PricingStrategy <|.. StudentPricing
+    PricingStrategy <|.. FacultyPricing
+    PricingStrategy <|.. StaffPricing
+    PricingStrategy <|.. PartnerPricing
+}
+
+package "scheduler.payment" {
+
+    interface PaymentStrategy <<Strategy>> {
+        +processTransaction(amount: double): boolean
+    }
+
+    class CreditCardPayment {
+        +processTransaction(amount: double): boolean
+    }
+
+    class DebitCardPayment {
+        +processTransaction(amount: double): boolean
+    }
+
+    class InstitutionBilling {
+        +processTransaction(amount: double): boolean
+    }
+
+    PaymentStrategy <|.. CreditCardPayment
+    PaymentStrategy <|.. DebitCardPayment
+    PaymentStrategy <|.. InstitutionBilling
+}
+
+package "scheduler.sensor" {
+
+    interface SensorObserver <<Observer>> {
+        +update(sensorData: String): void
+    }
+
+    class HardwareSensor <<Subject>> {
+        -sensorID: String
+        -roomID: String
+        -observers: List<SensorObserver>
+
+        +HardwareSensor(sensorID: String, roomID: String)
+        +attach(observer: SensorObserver): void
+        +detach(observer: SensorObserver): void
+        +notifyObservers(data: String): void
+        +detectOccupancy(): void
+        +detectOccupancy(occupied: boolean): void
+        +badgeScan(badgeID: String): void
+        +getSensorID(): String
+        +getRoomID(): String
+    }
+
+    HardwareSensor o-- "0..*" SensorObserver : observers
+}
+
+package "scheduler.booking" {
+
+    class Booking {
+        -bookingID: String
+        -user: User
+        -room: Room
+        -startTime: LocalDateTime
+        -endTime: LocalDateTime
+        -isCheckedIn: boolean
+        -isCancelled: boolean
+        -depositForfeited: boolean
+        -upfrontDeposit: double
+        -pricingStrategy: PricingStrategy
+        -paymentStrategy: PaymentStrategy
+
+        +Booking()
+        +Booking(user: User, room: Room,
+                 startTime: LocalDateTime, endTime: LocalDateTime,
+                 pricingStrategy: PricingStrategy,
+                 paymentStrategy: PaymentStrategy)
+
+        +calculateUpfrontCost(): double
+        +calculateFinalCost(): double
+        +calculateFinalCost(hours: int): double
+        +executePayment(amount: double): boolean
+        +checkIn(): void
+        +cancel(): void
+        +forfeitDeposit(): void
+        +overlaps(otherStart: LocalDateTime,
+                  otherEnd: LocalDateTime): boolean
+        +modifyTimes(newStart: LocalDateTime,
+                     newEnd: LocalDateTime): void
+        +extendBooking(additionalHours: int): boolean
+        +getBookingID(): String
+        +getUser(): User
+        +getRoom(): Room
+        +getStartTime(): LocalDateTime
+        +getEndTime(): LocalDateTime
+        +isCheckedIn(): boolean
+        +isCancelled(): boolean
+        +isDepositForfeited(): boolean
+        +getUpfrontDeposit(): double
+        +getPricingStrategy(): PricingStrategy
+        +getPaymentStrategy(): PaymentStrategy
+        +setBookingID(bookingID: String): void
+        +setPaymentStrategy(strategy: PaymentStrategy): void
+        +setPricingStrategy(strategy: PricingStrategy): void
+    }
+
+    class BookingManager {
+        -activeBookings: List<Booking>
+        -rooms: Map<String, Room>
+
+        +BookingManager()
+        +addRoom(room: Room): boolean
+        +getRoom(roomID: String): Room
+        +createBooking(user: User, roomID: String,
+                       startTime: LocalDateTime,
+                       endTime: LocalDateTime,
+                       pricingStrategy: PricingStrategy,
+                       paymentStrategy: PaymentStrategy): Booking
+        +isRoomAvailable(roomID: String,
+                         startTime: LocalDateTime,
+                         endTime: LocalDateTime): boolean
+        +findBookingByUser(userID: String): Booking
+        +getBookingsForUser(userID: String): List<Booking>
+        +modifyBooking(userID: String,
+                       newStart: LocalDateTime,
+                       newEnd: LocalDateTime): boolean
+        +cancelBooking(userID: String): boolean
+        +extendBooking(userID: String, additionalHours: int): boolean
+        +update(sensorData: String): void
+        +checkTimeouts(): void
+        +getActiveBookings(): List<Booking>
+        +getRooms(): Map<String, Room>
+        +removeRoom(roomID: String): boolean
+        +updateRoomState(roomID: String, state: String): boolean
+        +cancelBookingByID(bookingID: String): boolean
+    }
+
+    class BookingSystemFacade <<Facade, Singleton>> {
+        -{static} instance: BookingSystemFacade
+        -userFactory: UserFactory
+        -bookingManager: BookingManager
+
+        -BookingSystemFacade()
+        +{static} getInstance(): BookingSystemFacade
+        +processBooking(userID: String, roomID: String,
+                        hours: int): boolean
+        +processBooking(userID: String, roomID: String,
+                        startTime: LocalDateTime, hours: int,
+                        paymentMethod: String): boolean
+        +modifyBooking(userID: String,
+                       newStart: LocalDateTime,
+                       newEnd: LocalDateTime): boolean
+        +cancelBooking(userID: String): boolean
+        +extendBooking(userID: String, additionalHours: int): boolean
+        +addRoom(room: Room): boolean
+        +getRoom(roomID: String): Room
+        +findBookingByUser(userID: String): Booking
+        +getBookingManager(): BookingManager
+        +removeRoom(roomID: String): boolean
+        +updateRoomState(roomID: String, state: String): boolean
+        +cancelBookingByID(bookingID: String): boolean
+    }
+
+    SensorObserver <|.. BookingManager
+
+    BookingManager o-- "0..*" Booking : manages
+    BookingManager o-- "0..*" Room : manages
+
+    BookingSystemFacade *-- "1" BookingManager
+    BookingSystemFacade *-- "1" UserFactory
+
+    Booking --> "1" User
+    Booking --> "1" Room
+    Booking --> "1" PricingStrategy
+    Booking --> "0..1" PaymentStrategy
+
+    BookingManager ..> AvailableState
+    BookingManager ..> OccupiedState
+    BookingManager ..> MaintenanceState
+    BookingManager ..> UserFactory
+}
+
+
+package "scheduler.database" {
+
+    class CsvDatabase <<Utility>> {
+        +{static} ACCOUNTS_FILE: Path
+        +{static} BOOKINGS_FILE: Path
+        +{static} ROOMS_FILE: Path
+
+        +{static} read(file: Path): List<String[]>
+        +{static} append(file: Path, row: String): void
+        +{static} write(file: Path, rows: List<String>): void
+        +{static} clean(value: String): String
+    }
+}
+
+UserFactory ..> CsvDatabase : reads/writes accounts
+BookingManager ..> CsvDatabase : reads/writes bookings and rooms
+Administrator ..> CsvDatabase : reads accounts
+ChiefEventCoordinator ..> CsvDatabase : writes accounts
+
+package "scheduler.gui" {
+
+    class MainUI {
+        -cardLayout: CardLayout
+        -contentPanel: JPanel
+        -myBookingsPanel: MyBookingsPanel
+        -currentUser: User
+
+        +MainUI()
+        +showPanel(panelName: String): void
+        +setCurrentUser(currentUser: User): void
+        +getCurrentUser(): User
+        +showUserBookings(): void
+        +showAdministratorBookings(): void
+        +logout(): void
+    }
+
+    class LoginPanel {
+        -emailField: JTextField
+        -passwordField: JPasswordField
+        -roleBox: JComboBox<String>
+    }
+
+    class RegistrationPanel
+    class UserDashboardPanel
+    class AdminDashboardPanel
+
+    class ChiefCoordinatorDashboardPanel {
+        -emailField: JTextField
+        -adminIDField: JTextField
+    }
+
+    class RoomManagementPanel {
+        -facade: BookingSystemFacade
+        -tableModel: DefaultTableModel
+        -roomTable: JTable
+    }
+
+    class RoomBookingPanel
+
+    class MyBookingsPanel {
+        -mainUI: MainUI
+        -facade: BookingSystemFacade
+        -tableModel: DefaultTableModel
+        -bookingTable: JTable
+        -administratorMode: boolean
+
+        +setAdministratorMode(administratorMode: boolean): void
+    }
+
+    class PaymentPanel
+
+    class SensorPanel {
+        -facade: BookingSystemFacade
+        -tableModel: DefaultTableModel
+        -sensorTable: JTable
+    }
+
+    MainUI --|> JFrame
+
+    LoginPanel --|> JPanel
+    RegistrationPanel --|> JPanel
+    UserDashboardPanel --|> JPanel
+    AdminDashboardPanel --|> JPanel
+    ChiefCoordinatorDashboardPanel --|> JPanel
+    RoomManagementPanel --|> JPanel
+    RoomBookingPanel --|> JPanel
+    MyBookingsPanel --|> JPanel
+    PaymentPanel --|> JPanel
+    SensorPanel --|> JPanel
+
+    MainUI *-- LoginPanel
+    MainUI *-- RegistrationPanel
+    MainUI *-- UserDashboardPanel
+    MainUI *-- AdminDashboardPanel
+    MainUI *-- ChiefCoordinatorDashboardPanel
+    MainUI *-- RoomManagementPanel
+    MainUI *-- RoomBookingPanel
+    MainUI *-- MyBookingsPanel
+    MainUI *-- PaymentPanel
+    MainUI *-- SensorPanel
+
+    MainUI --> "0..1" User : currentUser
+
+    LoginPanel ..> UserFactory : authenticates users
+    LoginPanel ..> Administrator : authenticates
+    LoginPanel ..> ChiefEventCoordinator : authenticates
+
+    ChiefCoordinatorDashboardPanel ..> ChiefEventCoordinator
+    ChiefCoordinatorDashboardPanel ..> Administrator : creates
+
+    RoomManagementPanel --> BookingSystemFacade
+    RoomManagementPanel ..> Room
+
+    MyBookingsPanel --> BookingSystemFacade
+    MyBookingsPanel ..> Booking
+
+    SensorPanel --> BookingSystemFacade
+    SensorPanel ..> HardwareSensor
+    SensorPanel ..> Room
+}
+
+Main ..> MainUI : creates
+
+note right of BookingSystemFacade
+Facade Pattern:
+Provides a simplified interface
+to booking, room, user, pricing,
+and payment operations.
+end note
+
+note right of Room
+State Pattern:
+Room behavior changes based on
+AvailableState, OccupiedState,
+or MaintenanceState.
+end note
+
+note right of HardwareSensor
+Observer Pattern:
+HardwareSensor notifies registered
+SensorObserver objects when sensor
+data changes.
+end note
+
+note right of PricingStrategy
+Strategy Pattern:
+Determines the hourly rate based
+on the user's account type.
+end note
+
+note right of PaymentStrategy
+Strategy Pattern:
+Allows different payment methods
+to process booking transactions.
+end note
+
+note right of UserFactory
+Factory Pattern:
+UserFactory centralizes the creation
+of User objects.
+end note
+
+note right of ChiefEventCoordinator
+Singleton Pattern:
+Only one Chief Event Coordinator
+exists in the system.
+end note
+
+@enduml
