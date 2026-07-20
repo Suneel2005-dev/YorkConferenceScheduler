@@ -12,7 +12,6 @@ import javax.swing.JOptionPane;
 public class ChiefEventCoordinator {
 
     private static ChiefEventCoordinator instance;
-    private String coordID;
 
     private static final String COORDINATOR_EMAIL = "chief@yorku.ca";
     private static final String COORDINATOR_PASSWORD = "Chief123!";
