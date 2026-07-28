@@ -1,0 +1,3599 @@
+### /mnt/data/ycs_work/src/main/java/scheduler/app/Main.java
+package scheduler.app;
+
+import javax.swing.SwingUtilities;
+import scheduler.gui.MainUI;
+
+public class Main {
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            MainUI mainUI = new MainUI();
+            mainUI.setVisible(true);
+        });
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/booking/Booking.java
+package scheduler.booking;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+
+import scheduler.payment.PaymentStrategy;
+import scheduler.pricing.PricingStrategy;
+import scheduler.room.Room;
+import scheduler.user.User;
+
+public class Booking {
+
+    private String bookingID;
+
+	private User user;
+	private Room room;
+
+	private LocalDateTime startTime;
+	private LocalDateTime endTime;
+
+	private boolean isCheckedIn;
+	private boolean isCancelled;
+	private boolean depositForfeited;
+
+	private double upfrontDeposit;
+
+	private PricingStrategy pricingStrategy;
+	private PaymentStrategy paymentStrategy;
+
+	public Booking() {
+		isCheckedIn = false;
+		isCancelled = false;
+		depositForfeited = false;
+		upfrontDeposit = 0.0;
+	}
+
+	public Booking(User user, Room room, LocalDateTime startTime, LocalDateTime endTime,
+			PricingStrategy pricingStrategy, PaymentStrategy paymentStrategy) {
+
+		if (user == null) {
+			throw new IllegalArgumentException("User is required.");
+		}
+
+		if (room == null) {
+			throw new IllegalArgumentException("Room is required.");
+		}
+
+		if (startTime == null || endTime == null) {
+			throw new IllegalArgumentException("Start and end times are required.");
+		}
+
+		if (!endTime.isAfter(startTime)) {
+			throw new IllegalArgumentException("End time must be after start time.");
+		}
+
+		if (pricingStrategy == null) {
+			throw new IllegalArgumentException("Pricing strategy is required.");
+		}
+
+		this.user = user;
+		this.room = room;
+		this.startTime = startTime;
+		this.endTime = endTime;
+		this.pricingStrategy = pricingStrategy;
+		this.paymentStrategy = paymentStrategy;
+
+		isCheckedIn = false;
+		isCancelled = false;
+		depositForfeited = false;
+		upfrontDeposit = 0.0;
+	}
+
+    public Booking(String bookingID, User user, Room room, LocalDateTime startTime,
+            LocalDateTime endTime, PricingStrategy pricingStrategy, PaymentStrategy paymentStrategy,
+            boolean isCheckedIn, boolean isCancelled, boolean depositForfeited, double upfrontDeposit) {
+
+        this(user, room, startTime, endTime, pricingStrategy, paymentStrategy);
+
+        this.bookingID = bookingID;
+        this.isCheckedIn = isCheckedIn;
+        this.isCancelled = isCancelled;
+        this.depositForfeited = depositForfeited;
+        this.upfrontDeposit = upfrontDeposit;
+    }
+
+	public double calculateUpfrontCost() {
+		if (pricingStrategy == null) {
+			return 0.0;
+		}
+
+		upfrontDeposit = pricingStrategy.getHourlyRate();
+		return upfrontDeposit;
+	}
+
+	public double calculateFinalCost() {
+		if (pricingStrategy == null) {
+			return 0.0;
+		}
+
+		long minutes = Duration.between(startTime, endTime).toMinutes();
+
+		if (minutes <= 0) {
+			return 0.0;
+		}
+
+		double hours = minutes / 60.0;
+		double totalCost = pricingStrategy.getHourlyRate() * hours;
+
+		if (isCheckedIn && !depositForfeited) {
+			totalCost -= upfrontDeposit;
+		}
+
+		return Math.max(0.0, totalCost);
+	}
+
+	public double calculateFinalCost(int hours) {
+		if (pricingStrategy == null || hours <= 0) {
+			return 0.0;
+		}
+
+		double totalCost = pricingStrategy.getHourlyRate() * hours;
+
+		if (isCheckedIn && !depositForfeited) {
+			totalCost -= upfrontDeposit;
+		}
+
+		return Math.max(0.0, totalCost);
+	}
+
+	public boolean executePayment(double amount) {
+		if (paymentStrategy == null || amount < 0) {
+			return false;
+		}
+
+		return paymentStrategy.processTransaction(amount);
+	}
+
+	public void checkIn() {
+		if (isCancelled) {
+			throw new IllegalStateException("A cancelled booking cannot be checked in.");
+		}
+
+		isCheckedIn = true;
+	}
+
+	public void cancel() {
+		isCancelled = true;
+	}
+
+	public void forfeitDeposit() {
+		depositForfeited = true;
+		isCheckedIn = false;
+	}
+
+	public boolean overlaps(LocalDateTime otherStart, LocalDateTime otherEnd) {
+
+		if (isCancelled || otherStart == null || otherEnd == null) {
+			return false;
+		}
+
+		return startTime.isBefore(otherEnd) && endTime.isAfter(otherStart);
+	}
+
+	public void modifyTimes(LocalDateTime newStart, LocalDateTime newEnd) {
+
+		if (newStart == null || newEnd == null) {
+			throw new IllegalArgumentException("Start and end times are required.");
+		}
+
+		if (!newEnd.isAfter(newStart)) {
+			throw new IllegalArgumentException("End time must be after start time.");
+		}
+
+		if (isCancelled) {
+			throw new IllegalStateException("A cancelled booking cannot be modified.");
+		}
+
+		startTime = newStart;
+		endTime = newEnd;
+	}
+
+	public boolean extendBooking(int additionalHours) {
+		if (additionalHours <= 0 || isCancelled) {
+			return false;
+		}
+
+		endTime = endTime.plusHours(additionalHours);
+		return true;
+	}
+
+    public String getBookingID() {
+        return bookingID;
+    }
+
+	public User getUser() {
+		return user;
+	}
+
+	public Room getRoom() {
+		return room;
+	}
+
+	public LocalDateTime getStartTime() {
+		return startTime;
+	}
+
+	public LocalDateTime getEndTime() {
+		return endTime;
+	}
+
+	public boolean isCheckedIn() {
+		return isCheckedIn;
+	}
+
+	public boolean isCancelled() {
+		return isCancelled;
+	}
+
+	public boolean isDepositForfeited() {
+		return depositForfeited;
+	}
+
+	public double getUpfrontDeposit() {
+		return upfrontDeposit;
+	}
+
+	public PricingStrategy getPricingStrategy() {
+		return pricingStrategy;
+	}
+
+	public PaymentStrategy getPaymentStrategy() {
+		return paymentStrategy;
+	}
+
+    public void setBookingID(String bookingID) {
+        this.bookingID = bookingID;
+    }
+
+	public void setPaymentStrategy(PaymentStrategy paymentStrategy) {
+
+### /mnt/data/ycs_work/src/main/java/scheduler/booking/BookingManager.java
+package scheduler.booking;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import scheduler.database.CsvDatabase;
+import scheduler.payment.PaymentStrategy;
+import scheduler.pricing.FacultyPricing;
+import scheduler.pricing.PartnerPricing;
+import scheduler.pricing.PricingStrategy;
+import scheduler.pricing.StaffPricing;
+import scheduler.pricing.StudentPricing;
+import scheduler.room.AvailableState;
+import scheduler.room.MaintenanceState;
+import scheduler.room.OccupiedState;
+import scheduler.room.Room;
+import scheduler.sensor.SensorObserver;
+import scheduler.user.User;
+import scheduler.user.UserFactory;
+
+public class BookingManager implements SensorObserver {
+
+    private static final DateTimeFormatter CSV_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private final List<Booking> activeBookings;
+    private final Map<String, Room> rooms;
+
+    public BookingManager() {
+        activeBookings = new ArrayList<>();
+        rooms = new HashMap<>();
+
+        loadRooms();
+        loadBookings();
+    }
+
+    public boolean addRoom(Room room) {
+        if (room == null) {
+            return false;
+        }
+
+        String roomID = normalize(room.getRoomID());
+
+        if (rooms.containsKey(roomID)) {
+            return false;
+        }
+
+        rooms.put(roomID, room);
+        saveRooms();
+
+        return true;
+    }
+
+    public Room getRoom(String roomID) {
+        if (roomID == null || roomID.isBlank()) {
+            return null;
+        }
+
+        return rooms.get(normalize(roomID));
+    }
+
+    public Booking createBooking(
+            User user,
+            String roomID,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            PricingStrategy pricingStrategy,
+            PaymentStrategy paymentStrategy) {
+
+        if (user == null) {
+            throw new IllegalArgumentException("User is required.");
+        }
+
+        Room room = getRoom(roomID);
+
+        if (room == null) {
+            throw new IllegalArgumentException(
+                    "The selected room does not exist.");
+        }
+
+        if (room.isMaintenance()
+                || "disabled".equalsIgnoreCase(room.getStatus())) {
+            throw new IllegalArgumentException(
+                    "The selected room is disabled or under maintenance.");
+        }
+
+        if (startTime == null || endTime == null) {
+            throw new IllegalArgumentException(
+                    "Start and end times are required.");
+        }
+
+        if (!endTime.isAfter(startTime)) {
+            throw new IllegalArgumentException(
+                    "End time must be after start time.");
+        }
+
+        if (startTime.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException(
+                    "A booking cannot start in the past.");
+        }
+
+        if (!isRoomAvailable(
+                roomID, startTime, endTime, null)) {
+
+            throw new IllegalArgumentException(
+                    "The room is unavailable during the selected time.");
+        }
+
+        Booking booking = new Booking(
+                user,
+                room,
+                startTime,
+                endTime,
+                pricingStrategy,
+                paymentStrategy);
+
+        booking.setBookingID(generateBookingID());
+
+        double deposit = booking.calculateUpfrontCost();
+
+        if (paymentStrategy != null
+                && !booking.executePayment(deposit)) {
+
+            throw new IllegalStateException(
+                    "The upfront deposit payment was unsuccessful.");
+        }
+
+        activeBookings.add(booking);
+        saveBookings();
+
+        return booking;
+    }
+
+    public boolean isRoomAvailable(
+            String roomID,
+            LocalDateTime startTime,
+            LocalDateTime endTime) {
+
+        return isRoomAvailable(
+                roomID, startTime, endTime, null);
+    }
+
+    private boolean isRoomAvailable(
+            String roomID,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            Booking ignoredBooking) {
+
+        Room room = getRoom(roomID);
+
+        if (room == null
+                || room.isMaintenance()
+                || "disabled".equalsIgnoreCase(room.getStatus())
+                || startTime == null
+                || endTime == null
+                || !endTime.isAfter(startTime)) {
+
+            return false;
+        }
+
+        for (Booking booking : activeBookings) {
+            if (booking == ignoredBooking
+                    || booking.isCancelled()) {
+                continue;
+            }
+
+            boolean sameRoom =
+                    booking.getRoom()
+                            .getRoomID()
+                            .equalsIgnoreCase(roomID);
+
+            if (sameRoom
+                    && booking.overlaps(startTime, endTime)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public Booking findBookingByUser(String userID) {
+        if (userID == null || userID.isBlank()) {
+            return null;
+        }
+
+        for (Booking booking : activeBookings) {
+            if (!booking.isCancelled()
+                    && booking.getUser()
+                            .getUserID()
+                            .equalsIgnoreCase(userID)) {
+
+                return booking;
+            }
+        }
+
+        return null;
+    }
+
+    public List<Booking> getBookingsForUser(String userID) {
+        List<Booking> userBookings = new ArrayList<>();
+
+        if (userID == null || userID.isBlank()) {
+            return userBookings;
+        }
+
+        for (Booking booking : activeBookings) {
+            if (booking.getUser()
+                    .getUserID()
+                    .equalsIgnoreCase(userID)) {
+
+                userBookings.add(booking);
+            }
+        }
+
+        return userBookings;
+    }
+
+    public boolean modifyBooking(
+            String userID,
+            LocalDateTime newStart,
+            LocalDateTime newEnd) {
+
+        Booking booking = findBookingByUser(userID);
+
+        if (booking == null
+                || newStart == null
+                || newEnd == null
+                || !newEnd.isAfter(newStart)
+                || newStart.isBefore(LocalDateTime.now())) {
+
+            return false;
+        }
+
+        String roomID = booking.getRoom().getRoomID();
+
+### /mnt/data/ycs_work/src/main/java/scheduler/booking/BookingSystemFacade.java
+package scheduler.booking;
+
+import java.time.LocalDateTime;
+
+import scheduler.payment.CreditCardPayment;
+import scheduler.payment.DebitCardPayment;
+import scheduler.payment.InstitutionBilling;
+import scheduler.payment.PaymentStrategy;
+import scheduler.pricing.FacultyPricing;
+import scheduler.pricing.PartnerPricing;
+import scheduler.pricing.PricingStrategy;
+import scheduler.pricing.StaffPricing;
+import scheduler.pricing.StudentPricing;
+import scheduler.room.Room;
+import scheduler.user.User;
+import scheduler.user.UserFactory;
+
+public class BookingSystemFacade {
+
+	private static BookingSystemFacade instance;
+
+	private final UserFactory userFactory;
+	private final BookingManager bookingManager;
+
+	private BookingSystemFacade() {
+        userFactory = new UserFactory();
+        bookingManager = new BookingManager();
+    }
+
+	public static BookingSystemFacade getInstance() {
+		if (instance == null) {
+			instance = new BookingSystemFacade();
+		}
+
+		return instance;
+	}
+
+	public boolean processBooking(String userID, String roomID, int hours) {
+
+		return processBooking(userID, roomID, LocalDateTime.now().plusMinutes(1), hours, "Credit Card");
+	}
+
+
+	 // Overloaded version used by the GUI.
+
+	public boolean processBooking(String userID, String roomID, LocalDateTime startTime, int hours,
+			String paymentMethod) {
+
+		if (userID == null || userID.isBlank() || roomID == null || roomID.isBlank() || startTime == null
+				|| hours <= 0) {
+
+			return false;
+		}
+
+		User user = userFactory.getUserByID(userID);
+
+		if (user == null || !user.isVerified()) {
+			return false;
+		}
+
+		PricingStrategy pricingStrategy = selectPricingStrategy(user);
+
+		PaymentStrategy paymentStrategy = selectPaymentStrategy(paymentMethod);
+
+		if (pricingStrategy == null || paymentStrategy == null) {
+
+			return false;
+		}
+
+		LocalDateTime endTime = startTime.plusHours(hours);
+
+		try {
+			bookingManager.createBooking(user, roomID, startTime, endTime, pricingStrategy, paymentStrategy);
+
+			return true;
+
+		} catch (IllegalArgumentException | IllegalStateException exception) {
+
+			return false;
+		}
+	}
+
+	public boolean modifyBooking(String userID, LocalDateTime newStart, LocalDateTime newEnd) {
+
+		return bookingManager.modifyBooking(userID, newStart, newEnd);
+	}
+
+	public boolean cancelBooking(String userID) {
+		return bookingManager.cancelBooking(userID);
+	}
+
+	public boolean extendBooking(String userID, int additionalHours) {
+
+		return bookingManager.extendBooking(userID, additionalHours);
+	}
+
+	public boolean addRoom(Room room) {
+		return bookingManager.addRoom(room);
+	}
+
+	public Room getRoom(String roomID) {
+		return bookingManager.getRoom(roomID);
+	}
+
+    public java.util.Map<String, Room> getRooms() {
+        return bookingManager.getRooms();
+    }
+
+    public java.util.List<Booking> getBookings() {
+        return bookingManager.getActiveBookings();
+    }
+
+	public Booking findBookingByUser(String userID) {
+		return bookingManager.findBookingByUser(userID);
+	}
+
+	public BookingManager getBookingManager() {
+		return bookingManager;
+	}
+
+    public boolean removeRoom(String roomID) {
+        return bookingManager.removeRoom(roomID);
+    }
+
+    public boolean updateRoomState(
+            String roomID,
+            String state) {
+
+        return bookingManager.updateRoomState(
+                roomID,
+                state);
+    }
+
+    public boolean cancelBookingByID(String bookingID) {
+        return bookingManager.cancelBookingByID(bookingID);
+    }
+
+	private PricingStrategy selectPricingStrategy(User user) {
+
+		String accountType = user.getAccountType();
+
+		if ("Student".equalsIgnoreCase(accountType)) {
+			return new StudentPricing();
+		}
+
+		if ("Faculty".equalsIgnoreCase(accountType)) {
+			return new FacultyPricing();
+		}
+
+		if ("Staff".equalsIgnoreCase(accountType)) {
+			return new StaffPricing();
+		}
+
+		if ("Partner".equalsIgnoreCase(accountType)) {
+			return new PartnerPricing();
+		}
+
+		return null;
+	}
+
+	private PaymentStrategy selectPaymentStrategy(String paymentMethod) {
+
+		if (paymentMethod == null) {
+			return null;
+		}
+
+		if ("Credit Card".equalsIgnoreCase(paymentMethod)) {
+			return new CreditCardPayment();
+		}
+
+		if ("Debit Card".equalsIgnoreCase(paymentMethod)) {
+			return new DebitCardPayment();
+		}
+
+		if ("Institution Billing".equalsIgnoreCase(paymentMethod)) {
+			return new InstitutionBilling();
+		}
+
+		return null;
+	}
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/database/CsvDatabase.java
+package scheduler.database;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
+
+public final class CsvDatabase {
+
+    public static final Path ACCOUNTS_FILE = Path.of("accounts.csv");
+    public static final Path BOOKINGS_FILE = Path.of("bookings.csv");
+    public static final Path ROOMS_FILE = Path.of("rooms.csv");
+
+    private CsvDatabase() {
+    }
+
+    public static synchronized List<String[]> read(Path file) {
+        List<String[]> rows = new ArrayList<>();
+
+        if (!Files.exists(file)) {
+            return rows;
+        }
+
+        try {
+            List<String> lines = Files.readAllLines(file);
+
+            for (int i = 1; i < lines.size(); i++) {
+                String line = lines.get(i).trim();
+
+                if (!line.isEmpty()) {
+                    rows.add(line.split(",", -1));
+                }
+            }
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "Could not read CSV file: " + file, exception);
+        }
+
+        return rows;
+    }
+
+    public static synchronized void append(Path file, String row) {
+        try {
+            Files.writeString(
+                    file,
+                    System.lineSeparator() + row,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND);
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "Could not write to CSV file: " + file, exception);
+        }
+    }
+
+    public static synchronized void replaceRows(
+            Path file,
+            String header,
+            List<String> rows) {
+
+        List<String> contents = new ArrayList<>();
+        contents.add(header);
+        contents.addAll(rows);
+
+        try {
+            Files.write(
+                    file,
+                    contents,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "Could not update CSV file: " + file, exception);
+        }
+    }
+
+    public static String clean(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace(",", " ").trim();
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/gui/AdminDashboardPanel.java
+package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+public class AdminDashboardPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+    public AdminDashboardPanel(MainUI mainUI) {
+        setLayout(new BorderLayout(20, 20));
+        setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+
+        JLabel titleLabel = new JLabel("Administrator Dashboard", JLabel.CENTER);
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 26f));
+        add(titleLabel, BorderLayout.NORTH);
+
+        JPanel actionPanel = new JPanel(new GridLayout(2, 2, 20, 20));
+
+        JButton roomManagementButton = new JButton("Manage Rooms");
+        JButton sensorButton = new JButton("Sensor Status");
+        JButton bookingsButton = new JButton("View Bookings");
+        JButton logoutButton = new JButton("Logout");
+
+        roomManagementButton.addActionListener(
+                event -> mainUI.showPanel(MainUI.ROOM_MANAGEMENT));
+        sensorButton.addActionListener(
+                event -> mainUI.showPanel(MainUI.SENSOR));
+        bookingsButton.addActionListener(
+                event -> mainUI.showAdministratorBookings());
+        logoutButton.addActionListener(
+                event -> mainUI.logout());
+
+        actionPanel.add(roomManagementButton);
+        actionPanel.add(sensorButton);
+        actionPanel.add(bookingsButton);
+        actionPanel.add(logoutButton);
+
+        add(actionPanel, BorderLayout.CENTER);
+    }
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/gui/ChiefCoordinatorDashboardPanel.java
+package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+import scheduler.user.ChiefEventCoordinator;
+
+public class ChiefCoordinatorDashboardPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+    private final JTextField emailField;
+    private final JTextField adminIDField;
+
+    public ChiefCoordinatorDashboardPanel(MainUI mainUI) {
+        setLayout(new BorderLayout(20, 20));
+        setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+
+        JLabel titleLabel = new JLabel(
+                "Chief Event Coordinator Dashboard",
+                JLabel.CENTER);
+
+        titleLabel.setFont(
+                titleLabel.getFont().deriveFont(Font.BOLD, 26f));
+
+        add(titleLabel, BorderLayout.NORTH);
+
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(
+                BorderFactory.createTitledBorder(
+                        "Generate Administrator Account"));
+
+        GridBagConstraints constraints =
+                new GridBagConstraints();
+
+        constraints.insets = new Insets(10, 10, 10, 10);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+
+        emailField = new JTextField(24);
+        adminIDField = new JTextField(24);
+
+        addFormRow(
+                formPanel,
+                constraints,
+                0,
+                "Administrator Email:",
+                emailField);
+
+        addFormRow(
+                formPanel,
+                constraints,
+                1,
+                "Administrator ID:",
+                adminIDField);
+
+        JButton submitButton =
+                new JButton("Generate Administrator");
+
+        submitButton.addActionListener(event ->
+                generateAdministrator());
+
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.gridwidth = 2;
+        constraints.weightx = 1;
+
+        formPanel.add(submitButton, constraints);
+
+        JButton logoutButton = new JButton("Logout");
+
+        logoutButton.addActionListener(event -> {
+            emailField.setText("");
+            adminIDField.setText("");
+            mainUI.showPanel(MainUI.LOGIN);
+        });
+
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.add(logoutButton);
+
+        add(formPanel, BorderLayout.CENTER);
+        add(bottomPanel, BorderLayout.SOUTH);
+    }
+
+    private void generateAdministrator() {
+        String email = emailField.getText().trim();
+        String adminID = adminIDField.getText().trim();
+
+        try {
+            ChiefEventCoordinator
+                    .getInstance()
+                    .generateAdminAccount(email, adminID);
+
+            emailField.setText("");
+            adminIDField.setText("");
+
+        } catch (IllegalArgumentException
+                | IllegalStateException exception) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    exception.getMessage(),
+                    "Administrator Creation Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void addFormRow(
+            JPanel panel,
+            GridBagConstraints constraints,
+            int row,
+            String labelText,
+            java.awt.Component component) {
+
+        constraints.gridx = 0;
+        constraints.gridy = row;
+        constraints.gridwidth = 1;
+        constraints.weightx = 0;
+
+        panel.add(new JLabel(labelText), constraints);
+
+        constraints.gridx = 1;
+        constraints.weightx = 1;
+
+        panel.add(component, constraints);
+    }
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/gui/LoginPanel.java
+package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+
+import javax.swing.JOptionPane;
+
+import scheduler.user.User;
+import scheduler.user.UserFactory;
+import scheduler.user.ChiefEventCoordinator;
+import scheduler.user.Administrator;
+
+public class LoginPanel extends JPanel {
+
+	private static final long serialVersionUID = 1L;
+
+	private final JTextField emailField;
+	private final JPasswordField passwordField;
+	private final JComboBox<String> roleBox;
+
+	public LoginPanel(MainUI mainUI) {
+		setLayout(new BorderLayout(20, 20));
+		setBorder(BorderFactory.createEmptyBorder(40, 80, 40, 80));
+
+		JLabel titleLabel = new JLabel("Room Booking System", JLabel.CENTER);
+		titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 28f));
+		add(titleLabel, BorderLayout.NORTH);
+
+		JPanel formPanel = new JPanel(new GridBagLayout());
+		formPanel.setBorder(BorderFactory.createTitledBorder("Login"));
+
+		GridBagConstraints constraints = new GridBagConstraints();
+		constraints.insets = new Insets(10, 10, 10, 10);
+		constraints.fill = GridBagConstraints.HORIZONTAL;
+
+		emailField = new JTextField(24);
+		passwordField = new JPasswordField(24);
+		roleBox = new JComboBox<>(
+				new String[] { "Student", "Faculty", "Staff", "Partner", "Administrator", "Chief Event Coordinator" });
+
+		addFormRow(formPanel, constraints, 0, "Email:", emailField);
+		addFormRow(formPanel, constraints, 1, "Password:", passwordField);
+		addFormRow(formPanel, constraints, 2, "Role:", roleBox);
+
+		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+
+		JButton loginButton = new JButton("Login");
+		JButton registerButton = new JButton("Create Account");
+
+		loginButton.addActionListener(event -> {
+
+            String email = emailField.getText().trim();
+            String password =
+                    new String(passwordField.getPassword());
+
+            String selectedRole =
+                    (String) roleBox.getSelectedItem();
+
+            try {
+                if (email.isEmpty() || password.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "Email and password are required.");
+                }
+
+                /*
+                * Administrator login
+                */
+                if ("Administrator".equals(selectedRole)) {
+                    Administrator administrator =
+                            Administrator.authenticate(
+                                    email,
+                                    password);
+
+                    if (administrator == null) {
+                        throw new IllegalArgumentException(
+                                "Invalid administrator "
+                                        + "email or password.");
+                    }
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Administrator login successful.",
+                            "Login",
+                            JOptionPane.INFORMATION_MESSAGE);
+
+                    emailField.setText("");
+                    passwordField.setText("");
+
+                    mainUI.showPanel(
+                            MainUI.ADMIN_DASHBOARD);
+
+                    return;
+                }
+
+                /*
+                * Chief Event Coordinator login
+                */
+                if ("Chief Event Coordinator"
+                        .equals(selectedRole)) {
+
+                    ChiefEventCoordinator coordinator =
+                            ChiefEventCoordinator.getInstance();
+
+                    if (!coordinator.authenticate(
+                            email,
+                            password)) {
+
+                        throw new IllegalArgumentException(
+                                "Invalid Chief Event Coordinator "
+                                        + "email or password.");
+                    }
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Login successful.",
+                            "Login",
+                            JOptionPane.INFORMATION_MESSAGE);
+
+                    emailField.setText("");
+                    passwordField.setText("");
+
+                    mainUI.showPanel(
+                            MainUI.CHIEF_COORDINATOR_DASHBOARD);
+
+                    return;
+                }
+
+                /*
+                * Normal user login:
+                * student, faculty, staff, or partner
+                */
+                UserFactory userFactory = new UserFactory();
+
+                User user =
+                        userFactory.getUserByEmail(email);
+
+                if (user == null
+                        || !user.checkPassword(password)) {
+
+                    throw new IllegalArgumentException(
+                            "Invalid email or password.");
+                }
+
+                if (!user.getAccountType()
+                        .equalsIgnoreCase(selectedRole)) {
+
+                    throw new IllegalArgumentException(
+                            "The selected role does not "
+                                    + "match this account.");
+                }
+
+                if (!user.isVerified()) {
+                    throw new IllegalArgumentException(
+                            "This university account "
+                                    + "has not been verified.");
+                }
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Login successful.",
+                        "Login",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                /*
+                * Save the logged-in user so the booking panels
+                * know whose bookings to display.
+                */
+                mainUI.setCurrentUser(user);
+
+                emailField.setText("");
+                passwordField.setText("");
+
+                mainUI.showPanel(
+                        MainUI.USER_DASHBOARD);
+
+            } catch (IllegalArgumentException
+                    | IllegalStateException exception) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        exception.getMessage(),
+                        "Login Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+		registerButton.addActionListener(event -> mainUI.showPanel(MainUI.REGISTRATION));
+
+		buttonPanel.add(loginButton);
+		buttonPanel.add(registerButton);
+
+		constraints.gridx = 0;
+		constraints.gridy = 3;
+		constraints.gridwidth = 2;
+		formPanel.add(buttonPanel, constraints);
+
+		add(formPanel, BorderLayout.CENTER);
+	}
+
+	private void addFormRow(JPanel panel, GridBagConstraints constraints, int row, String labelText,
+			java.awt.Component component) {
+
+		constraints.gridx = 0;
+		constraints.gridy = row;
+		constraints.gridwidth = 1;
+		constraints.weightx = 0;
+
+		panel.add(new JLabel(labelText), constraints);
+
+		constraints.gridx = 1;
+		constraints.weightx = 1;
+
+		panel.add(component, constraints);
+	}
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/gui/MainUI.java
+package scheduler.gui;
+
+import java.time.LocalDateTime;
+
+import java.awt.CardLayout;
+import java.awt.Dimension;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.UIManager;
+
+import scheduler.user.User;
+
+public class MainUI extends JFrame {
+
+    private static final long serialVersionUID = 1L;
+
+    public static final String LOGIN = "LOGIN";
+    public static final String REGISTRATION = "REGISTRATION";
+    public static final String USER_DASHBOARD = "USER_DASHBOARD";
+    public static final String ADMIN_DASHBOARD = "ADMIN_DASHBOARD";
+    public static final String CHIEF_COORDINATOR_DASHBOARD = "CHIEF_COORDINATOR_DASHBOARD";
+    public static final String ROOM_MANAGEMENT = "ROOM_MANAGEMENT";
+    public static final String ROOM_BOOKING = "ROOM_BOOKING";
+    public static final String MY_BOOKINGS = "MY_BOOKINGS";
+    public static final String PAYMENT = "PAYMENT";
+    public static final String SENSOR = "SENSOR";
+
+    private final CardLayout cardLayout;
+    private final JPanel contentPanel;
+    private final MyBookingsPanel myBookingsPanel;
+    private final PaymentPanel paymentPanel;
+
+    private User currentUser;
+
+    public MainUI() {
+        setTitle("Room Booking System");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setMinimumSize(new Dimension(1000, 650));
+        setLocationRelativeTo(null);
+
+        applySystemLookAndFeel();
+
+        cardLayout = new CardLayout();
+        contentPanel = new JPanel(cardLayout);
+        myBookingsPanel = new MyBookingsPanel(this);
+        paymentPanel = new PaymentPanel(this);
+
+        contentPanel.add(new LoginPanel(this), LOGIN);
+        contentPanel.add(new RegistrationPanel(this), REGISTRATION);
+        contentPanel.add(new UserDashboardPanel(this), USER_DASHBOARD);
+        contentPanel.add(new AdminDashboardPanel(this), ADMIN_DASHBOARD);
+        contentPanel.add(new ChiefCoordinatorDashboardPanel(this), CHIEF_COORDINATOR_DASHBOARD);
+        contentPanel.add(new RoomManagementPanel(this), ROOM_MANAGEMENT);
+        contentPanel.add(new RoomBookingPanel(this), ROOM_BOOKING);
+        contentPanel.add(myBookingsPanel, MY_BOOKINGS);
+        contentPanel.add(paymentPanel, PAYMENT);
+        contentPanel.add(new SensorPanel(this), SENSOR);
+
+        setContentPane(contentPanel);
+        showPanel(LOGIN);
+        pack();
+    }
+
+    public void showPanel(String panelName) {
+        cardLayout.show(contentPanel, panelName);
+    }
+
+    private void applySystemLookAndFeel() {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception exception) {
+            // The application will use Swing's default look and feel.
+        }
+    }
+
+    public void setCurrentUser(User currentUser) {
+        this.currentUser = currentUser;
+    }
+
+    public User getCurrentUser() {
+        return currentUser;
+    }
+
+    public void showUserBookings() {
+        myBookingsPanel.setAdministratorMode(false);
+        showPanel(MY_BOOKINGS);
+    }
+
+    public void showAdministratorBookings() {
+        myBookingsPanel.setAdministratorMode(true);
+        showPanel(MY_BOOKINGS);
+    }
+
+    public void showPaymentPanel(
+            String roomID,
+            LocalDateTime startTime,
+            int hours) {
+
+        paymentPanel.setPendingBooking(
+                roomID,
+                startTime,
+                hours);
+
+        showPanel(PAYMENT);
+    }
+
+    public void logout() {
+        currentUser = null;
+        showPanel(LOGIN);
+    }
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/gui/MyBookingsPanel.java
+package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.time.format.DateTimeFormatter;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+
+import scheduler.booking.Booking;
+import scheduler.booking.BookingSystemFacade;
+
+public class MyBookingsPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    private static final DateTimeFormatter TIME_FORMAT =
+            DateTimeFormatter.ofPattern("HH:mm");
+
+    private final MainUI mainUI;
+    private final BookingSystemFacade facade;
+    private final DefaultTableModel tableModel;
+    private final JTable bookingTable;
+
+    private boolean administratorMode;
+
+    public MyBookingsPanel(MainUI mainUI) {
+        this.mainUI = mainUI;
+        facade = BookingSystemFacade.getInstance();
+
+        setLayout(new BorderLayout(15, 15));
+        setBorder(
+                BorderFactory.createEmptyBorder(
+                        20, 20, 20, 20));
+
+        JLabel titleLabel =
+                new JLabel("Bookings", JLabel.CENTER);
+
+        titleLabel.setFont(
+                titleLabel.getFont().deriveFont(24f));
+
+        add(titleLabel, BorderLayout.NORTH);
+
+        tableModel = new DefaultTableModel(
+                new Object[] {
+                        "Booking ID",
+                        "User ID",
+                        "Room",
+                        "Date",
+                        "Start",
+                        "End",
+                        "Checked In",
+                        "Status"
+                },
+                0) {
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isCellEditable(
+                    int row,
+                    int column) {
+
+                return false;
+            }
+        };
+
+        bookingTable = new JTable(tableModel);
+        bookingTable.setFillsViewportHeight(true);
+
+        add(
+                new JScrollPane(bookingTable),
+                BorderLayout.CENTER);
+
+        JPanel buttonPanel =
+                new JPanel(
+                        new FlowLayout(
+                                FlowLayout.CENTER,
+                                10,
+                                5));
+
+        JButton cancelButton =
+                new JButton("Cancel Booking");
+
+        JButton refreshButton =
+                new JButton("Refresh");
+
+        JButton backButton =
+                new JButton("Back");
+
+        cancelButton.addActionListener(event -> {
+            int selectedRow =
+                    bookingTable.getSelectedRow();
+
+            if (selectedRow < 0) {
+                showError("Select a booking first.");
+                return;
+            }
+
+            String bookingID =
+                    tableModel.getValueAt(
+                            selectedRow,
+                            0).toString();
+
+            if (!facade.cancelBookingByID(bookingID)) {
+                showError(
+                        "The booking could not be cancelled.");
+                return;
+            }
+
+            loadBookings();
+        });
+
+        refreshButton.addActionListener(
+                event -> loadBookings());
+
+        backButton.addActionListener(event -> {
+            if (administratorMode) {
+                mainUI.showPanel(
+                        MainUI.ADMIN_DASHBOARD);
+            } else {
+                mainUI.showPanel(
+                        MainUI.USER_DASHBOARD);
+            }
+        });
+
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(refreshButton);
+        buttonPanel.add(backButton);
+
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        addComponentListener(
+                new ComponentAdapter() {
+                    @Override
+                    public void componentShown(
+                            ComponentEvent event) {
+
+                        loadBookings();
+                    }
+                });
+    }
+
+    public void setAdministratorMode(
+            boolean administratorMode) {
+
+        this.administratorMode =
+                administratorMode;
+
+        loadBookings();
+    }
+
+    private void loadBookings() {
+        tableModel.setRowCount(0);
+
+        for (Booking booking
+                : facade.getBookings()) {
+
+            if (!administratorMode
+                    && mainUI.getCurrentUser() != null
+                    && !booking.getUser()
+                            .getUserID()
+                            .equalsIgnoreCase(
+                                    mainUI
+                                            .getCurrentUser()
+                                            .getUserID())) {
+
+                continue;
+            }
+
+            String status;
+
+            if (booking.isCancelled()) {
+                status = "Cancelled";
+            } else if (booking.isDepositForfeited()) {
+                status = "Deposit Forfeited";
+            } else {
+                status = "Confirmed";
+            }
+
+            tableModel.addRow(new Object[] {
+                    booking.getBookingID(),
+                    booking.getUser().getUserID(),
+                    booking.getRoom().getRoomID(),
+                    booking.getStartTime()
+                            .format(DATE_FORMAT),
+                    booking.getStartTime()
+                            .format(TIME_FORMAT),
+                    booking.getEndTime()
+                            .format(TIME_FORMAT),
+                    booking.isCheckedIn()
+                            ? "Yes"
+                            : "No",
+                    status
+            });
+        }
+    }
+
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(
+                this,
+                message,
+                "Booking Error",
+                JOptionPane.ERROR_MESSAGE);
+    }
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/gui/PaymentPanel.java
+package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+import scheduler.booking.BookingSystemFacade;
+import scheduler.user.User;
+
+public class PaymentPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final DateTimeFormatter DISPLAY_FORMAT =
+            DateTimeFormatter.ofPattern(
+                    "yyyy-MM-dd HH:mm");
+
+    private final MainUI mainUI;
+    private final BookingSystemFacade facade;
+
+    private final JComboBox<String> paymentMethodBox;
+    private final JTextField cardholderField;
+    private final JTextField cardNumberField;
+    private final JTextField expiryField;
+
+    private final JLabel bookingLabel;
+    private final JLabel depositLabel;
+
+    private String pendingRoomID;
+    private LocalDateTime pendingStartTime;
+    private int pendingHours;
+
+    public PaymentPanel(MainUI mainUI) {
+        this.mainUI = mainUI;
+        facade = BookingSystemFacade.getInstance();
+
+        setLayout(new BorderLayout());
+
+        setBorder(
+                BorderFactory.createEmptyBorder(
+                        30, 80, 30, 80));
+
+        JLabel titleLabel =
+                new JLabel(
+                        "Payment",
+                        JLabel.CENTER);
+
+        titleLabel.setFont(
+                titleLabel.getFont().deriveFont(24f));
+
+        add(titleLabel, BorderLayout.NORTH);
+
+        JPanel formPanel =
+                new JPanel(new GridBagLayout());
+
+        formPanel.setBorder(
+                BorderFactory.createTitledBorder(
+                        "Payment Details"));
+
+        GridBagConstraints constraints =
+                new GridBagConstraints();
+
+        constraints.insets =
+                new Insets(8, 8, 8, 8);
+
+        constraints.fill =
+                GridBagConstraints.HORIZONTAL;
+
+        paymentMethodBox =
+                new JComboBox<>(
+                        new String[] {
+                                "Credit Card",
+                                "Debit Card",
+                                "Institution Billing"
+                        });
+
+        cardholderField =
+                new JTextField(20);
+
+        cardNumberField =
+                new JTextField(20);
+
+        expiryField =
+                new JTextField(8);
+
+        bookingLabel =
+                new JLabel(
+                        "No booking selected.");
+
+        depositLabel =
+                new JLabel(
+                        "Upfront deposit: $0.00");
+
+        addRow(
+                formPanel,
+                constraints,
+                0,
+                "Payment Method:",
+                paymentMethodBox);
+
+        addRow(
+                formPanel,
+                constraints,
+                1,
+                "Cardholder Name:",
+                cardholderField);
+
+        addRow(
+                formPanel,
+                constraints,
+                2,
+                "Card / Account Number:",
+                cardNumberField);
+
+        addRow(
+                formPanel,
+                constraints,
+                3,
+                "Expiry Date:",
+                expiryField);
+
+        constraints.gridx = 0;
+        constraints.gridy = 4;
+        constraints.gridwidth = 2;
+
+        formPanel.add(
+                bookingLabel,
+                constraints);
+
+        constraints.gridy = 5;
+
+        formPanel.add(
+                depositLabel,
+                constraints);
+
+        JPanel buttonPanel =
+                new JPanel(
+                        new FlowLayout(
+                                FlowLayout.CENTER,
+                                15,
+                                0));
+
+        JButton payButton =
+                new JButton(
+                        "Pay and Confirm");
+
+        JButton backButton =
+                new JButton("Back");
+
+        payButton.addActionListener(event -> {
+            try {
+                User user =
+                        mainUI.getCurrentUser();
+
+                if (user == null) {
+                    throw new IllegalStateException(
+                            "No user is currently logged in.");
+                }
+
+                if (pendingRoomID == null
+                        || pendingStartTime == null
+                        || pendingHours <= 0) {
+
+                    throw new IllegalStateException(
+                            "No booking is waiting "
+                                    + "for payment.");
+                }
+
+                String paymentMethod =
+                        (String) paymentMethodBox
+                                .getSelectedItem();
+
+                validatePaymentFields(
+                        paymentMethod);
+
+                boolean successful =
+                        facade.processBooking(
+                                user.getUserID(),
+                                pendingRoomID,
+                                pendingStartTime,
+                                pendingHours,
+                                paymentMethod);
+
+                if (!successful) {
+                    throw new IllegalStateException(
+                            "The booking could not be "
+                                    + "completed. The room "
+                                    + "may no longer be available.");
+                }
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Payment successful. "
+                                + "The booking was saved.",
+                        "Booking Confirmed",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                clearPaymentFields();
+                clearPendingBooking();
+
+                mainUI.showUserBookings();
+
+            } catch (IllegalArgumentException
+                    | IllegalStateException exception) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        exception.getMessage(),
+                        "Payment Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        backButton.addActionListener(
+                event -> mainUI.showPanel(
+                        MainUI.ROOM_BOOKING));
+
+        buttonPanel.add(payButton);
+        buttonPanel.add(backButton);
+
+        constraints.gridx = 0;
+        constraints.gridy = 6;
+        constraints.gridwidth = 2;
+
+        formPanel.add(
+                buttonPanel,
+                constraints);
+
+### /mnt/data/ycs_work/src/main/java/scheduler/gui/RegistrationPanel.java
+package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+
+public class RegistrationPanel extends JPanel {
+
+	private static final long serialVersionUID = 1L;
+
+	public RegistrationPanel(MainUI mainUI) {
+		setLayout(new BorderLayout());
+		setBorder(BorderFactory.createEmptyBorder(30, 80, 30, 80));
+
+		JLabel titleLabel = new JLabel("Create Account", JLabel.CENTER);
+		titleLabel.setFont(titleLabel.getFont().deriveFont(24f));
+		add(titleLabel, BorderLayout.NORTH);
+
+		JPanel formPanel = new JPanel(new GridBagLayout());
+		formPanel.setBorder(BorderFactory.createTitledBorder("Account Information"));
+
+		GridBagConstraints constraints = new GridBagConstraints();
+		constraints.insets = new Insets(8, 8, 8, 8);
+		constraints.fill = GridBagConstraints.HORIZONTAL;
+
+		JTextField userIdField = new JTextField(22);
+		JTextField emailField = new JTextField(22);
+		JTextField organizationIdField = new JTextField(22);
+		JPasswordField passwordField = new JPasswordField(22);
+		JPasswordField confirmPasswordField = new JPasswordField(22);
+		JComboBox<String> accountTypeBox = new JComboBox<>(new String[] { "Student", "Faculty", "Staff", "Partner" });
+
+		addRow(formPanel, constraints, 0, "User ID:", userIdField);
+		addRow(formPanel, constraints, 1, "Email:", emailField);
+		addRow(formPanel, constraints, 2, "Organization ID:", organizationIdField);
+		addRow(formPanel, constraints, 3, "Account Type:", accountTypeBox);
+		addRow(formPanel, constraints, 4, "Password:", passwordField);
+		addRow(formPanel, constraints, 5, "Confirm Password:", confirmPasswordField);
+
+		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+		JButton createButton = new JButton("Register");
+		JButton backButton = new JButton("Back");
+
+		createButton.addActionListener(event -> {
+
+			try {
+
+				String userID = userIdField.getText().trim();
+				String email = emailField.getText().trim();
+				String organizationID = organizationIdField.getText().trim();
+
+				String password = new String(passwordField.getPassword());
+				String confirmPassword = new String(confirmPasswordField.getPassword());
+
+				if (!password.equals(confirmPassword)) {
+					throw new IllegalArgumentException("Passwords do not match.");
+				}
+
+				java.util.Map<String, Object> details = new java.util.HashMap<>();
+
+				details.put("userID", userID);
+				details.put("email", email);
+				details.put("password", password);
+				details.put("orgID", organizationID);
+
+				scheduler.user.UserFactory factory = new scheduler.user.UserFactory();
+
+				factory.createUser(accountTypeBox.getSelectedItem().toString(), details);
+
+				JOptionPane.showMessageDialog(this, "Account created successfully!", "Registration",
+						JOptionPane.INFORMATION_MESSAGE);
+
+				mainUI.showPanel(MainUI.LOGIN);
+
+			} catch (IllegalArgumentException ex) {
+
+				JOptionPane.showMessageDialog(this, ex.getMessage(), "Registration Error", JOptionPane.ERROR_MESSAGE);
+			}
+		});
+
+		backButton.addActionListener(event -> mainUI.showPanel(MainUI.LOGIN));
+
+		buttonPanel.add(createButton);
+		buttonPanel.add(backButton);
+
+		constraints.gridx = 0;
+		constraints.gridy = 6;
+		constraints.gridwidth = 2;
+		formPanel.add(buttonPanel, constraints);
+
+		add(formPanel, BorderLayout.CENTER);
+	}
+
+	private void addRow(JPanel panel, GridBagConstraints constraints, int row, String label,
+			java.awt.Component component) {
+
+		constraints.gridx = 0;
+		constraints.gridy = row;
+		constraints.gridwidth = 1;
+		constraints.weightx = 0;
+		panel.add(new JLabel(label), constraints);
+
+		constraints.gridx = 1;
+		constraints.weightx = 1;
+		panel.add(component, constraints);
+	}
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/gui/RoomBookingPanel.java
+package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+import java.util.Map;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
+
+import scheduler.booking.BookingSystemFacade;
+import scheduler.room.Room;
+
+public class RoomBookingPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+    private final BookingSystemFacade facade;
+    private final JComboBox<String> roomBox;
+
+    public RoomBookingPanel(MainUI mainUI) {
+        facade = BookingSystemFacade.getInstance();
+
+        setLayout(new BorderLayout());
+        setBorder(
+                BorderFactory.createEmptyBorder(
+                        30, 80, 30, 80));
+
+        JLabel titleLabel =
+                new JLabel(
+                        "Book a Room",
+                        JLabel.CENTER);
+
+        titleLabel.setFont(
+                titleLabel.getFont().deriveFont(24f));
+
+        add(titleLabel, BorderLayout.NORTH);
+
+        JPanel formPanel =
+                new JPanel(new GridBagLayout());
+
+        formPanel.setBorder(
+                BorderFactory.createTitledBorder(
+                        "Booking Details"));
+
+        GridBagConstraints constraints =
+                new GridBagConstraints();
+
+        constraints.insets =
+                new Insets(8, 8, 8, 8);
+
+        constraints.fill =
+                GridBagConstraints.HORIZONTAL;
+
+        roomBox = new JComboBox<>();
+        loadRooms();
+
+        JTextField dateField =
+                new JTextField(
+                        LocalDate.now()
+                                .plusDays(1)
+                                .toString(),
+                        15);
+
+        JTextField startTimeField =
+                new JTextField("09:00", 15);
+
+        JSpinner hoursSpinner =
+                new JSpinner(
+                        new SpinnerNumberModel(
+                                1,
+                                1,
+                                12,
+                                1));
+
+        addRow(
+                formPanel,
+                constraints,
+                0,
+                "Room:",
+                roomBox);
+
+        addRow(
+                formPanel,
+                constraints,
+                1,
+                "Date (yyyy-MM-dd):",
+                dateField);
+
+        addRow(
+                formPanel,
+                constraints,
+                2,
+                "Start Time (HH:mm):",
+                startTimeField);
+
+        addRow(
+                formPanel,
+                constraints,
+                3,
+                "Hours:",
+                hoursSpinner);
+
+        JPanel buttonPanel =
+                new JPanel(
+                        new FlowLayout(
+                                FlowLayout.CENTER,
+                                15,
+                                0));
+
+        JButton continueButton =
+                new JButton(
+                        "Continue to Payment");
+
+        JButton refreshButton =
+                new JButton("Refresh Rooms");
+
+        JButton backButton =
+                new JButton("Back");
+
+        continueButton.addActionListener(event -> {
+            try {
+                if (mainUI.getCurrentUser() == null) {
+                    throw new IllegalStateException(
+                            "You must be logged in "
+                                    + "to create a booking.");
+                }
+
+                String roomID =
+                        (String) roomBox.getSelectedItem();
+
+                if (roomID == null
+                        || roomID.isBlank()) {
+
+                    throw new IllegalArgumentException(
+                            "Select an available room.");
+                }
+
+                LocalDate date =
+                        LocalDate.parse(
+                                dateField
+                                        .getText()
+                                        .trim());
+
+                LocalTime startTime =
+                        LocalTime.parse(
+                                startTimeField
+                                        .getText()
+                                        .trim());
+
+                LocalDateTime bookingStart =
+                        LocalDateTime.of(
+                                date,
+                                startTime);
+
+                int hours =
+                        (Integer) hoursSpinner
+                                .getValue();
+
+                if (bookingStart.isBefore(
+                        LocalDateTime.now())) {
+
+                    throw new IllegalArgumentException(
+                            "The booking cannot "
+                                    + "start in the past.");
+                }
+
+                LocalDateTime bookingEnd =
+                        bookingStart.plusHours(hours);
+
+                if (!facade
+                        .getBookingManager()
+                        .isRoomAvailable(
+                                roomID,
+                                bookingStart,
+                                bookingEnd)) {
+
+                    throw new IllegalArgumentException(
+                            "The room is unavailable "
+                                    + "during that time.");
+                }
+
+                mainUI.showPaymentPanel(
+                        roomID,
+                        bookingStart,
+                        hours);
+
+            } catch (DateTimeParseException exception) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Enter the date as yyyy-MM-dd "
+                                + "and the time as HH:mm.",
+                        "Invalid Date or Time",
+                        JOptionPane.ERROR_MESSAGE);
+
+            } catch (IllegalArgumentException
+                    | IllegalStateException exception) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        exception.getMessage(),
+                        "Booking Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        refreshButton.addActionListener(
+                event -> loadRooms());
+
+        backButton.addActionListener(
+                event -> mainUI.showPanel(
+                        MainUI.USER_DASHBOARD));
+
+        buttonPanel.add(continueButton);
+        buttonPanel.add(refreshButton);
+        buttonPanel.add(backButton);
+
+        constraints.gridx = 0;
+        constraints.gridy = 4;
+        constraints.gridwidth = 2;
+
+        formPanel.add(
+                buttonPanel,
+                constraints);
+
+        add(formPanel, BorderLayout.CENTER);
+    }
+### /mnt/data/ycs_work/src/main/java/scheduler/gui/RoomManagementPanel.java
+package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+import scheduler.booking.BookingSystemFacade;
+import scheduler.room.Room;
+
+public class RoomManagementPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+    private final BookingSystemFacade facade;
+    private final DefaultTableModel tableModel;
+    private final JTable roomTable;
+
+    public RoomManagementPanel(MainUI mainUI) {
+        facade = BookingSystemFacade.getInstance();
+
+        setLayout(new BorderLayout(15, 15));
+        setBorder(
+                BorderFactory.createEmptyBorder(
+                        20, 20, 20, 20));
+
+        JLabel titleLabel =
+                new JLabel("Room Management", JLabel.CENTER);
+
+        titleLabel.setFont(
+                titleLabel.getFont().deriveFont(24f));
+
+        add(titleLabel, BorderLayout.NORTH);
+
+        tableModel = new DefaultTableModel(
+                new Object[] {
+                        "Room ID",
+                        "Capacity",
+                        "Building",
+                        "Room",
+                        "Occupied",
+                        "Maintenance",
+                        "Status"
+                },
+                0) {
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isCellEditable(
+                    int row,
+                    int column) {
+
+                return false;
+            }
+        };
+
+        roomTable = new JTable(tableModel);
+        roomTable.setFillsViewportHeight(true);
+
+        add(
+                new JScrollPane(roomTable),
+                BorderLayout.CENTER);
+
+        JPanel controls =
+                new JPanel(
+                        new FlowLayout(
+                                FlowLayout.CENTER,
+                                10,
+                                5));
+
+        JTextField roomIDField =
+                new JTextField(7);
+
+        JTextField capacityField =
+                new JTextField(5);
+
+        JTextField buildingField =
+                new JTextField(10);
+
+        JTextField roomNumberField =
+                new JTextField(6);
+
+        JComboBox<String> stateBox =
+                new JComboBox<>(
+                        new String[] {
+                                "Available",
+                                "Occupied",
+                                "Maintenance"
+                        });
+
+        JButton addButton =
+                new JButton("Add Room");
+
+        JButton updateButton =
+                new JButton("Update State");
+
+        JButton removeButton =
+                new JButton("Remove");
+
+        JButton refreshButton =
+                new JButton("Refresh");
+
+        JButton backButton =
+                new JButton("Back");
+
+        addButton.addActionListener(event -> {
+            try {
+                String roomID =
+                        roomIDField.getText().trim();
+
+                int capacity = Integer.parseInt(
+                        capacityField.getText().trim());
+
+                String building =
+                        buildingField.getText().trim();
+
+                String roomNumber =
+                        roomNumberField.getText().trim();
+
+                String state =
+                        (String) stateBox.getSelectedItem();
+
+                boolean occupied =
+                        "Occupied".equals(state);
+
+                boolean maintenance =
+                        "Maintenance".equals(state);
+
+                Room room = new Room(
+                        roomID,
+                        capacity,
+                        building,
+                        roomNumber,
+                        occupied,
+                        maintenance,
+                        maintenance
+                                ? "disabled"
+                                : "enabled");
+
+                if (!facade.addRoom(room)) {
+                    throw new IllegalArgumentException(
+                            "A room with this ID already exists.");
+                }
+
+                loadRooms();
+
+                roomIDField.setText("");
+                capacityField.setText("");
+                buildingField.setText("");
+                roomNumberField.setText("");
+
+            } catch (NumberFormatException exception) {
+                showError(
+                        "Capacity must be a whole number.");
+
+            } catch (IllegalArgumentException
+                    | IllegalStateException exception) {
+
+                showError(exception.getMessage());
+            }
+        });
+
+        updateButton.addActionListener(event -> {
+            int selectedRow =
+                    roomTable.getSelectedRow();
+
+            if (selectedRow < 0) {
+                showError("Select a room first.");
+                return;
+            }
+
+            String roomID =
+                    tableModel.getValueAt(
+                            selectedRow,
+                            0).toString();
+
+            String state =
+                    (String) stateBox.getSelectedItem();
+
+            if (!facade.updateRoomState(
+                    roomID,
+                    state)) {
+
+                showError(
+                        "The room state could not be updated.");
+                return;
+            }
+
+            loadRooms();
+        });
+
+        removeButton.addActionListener(event -> {
+            int selectedRow =
+                    roomTable.getSelectedRow();
+
+            if (selectedRow < 0) {
+                showError("Select a room first.");
+                return;
+            }
+
+            String roomID =
+                    tableModel.getValueAt(
+                            selectedRow,
+                            0).toString();
+
+            if (!facade.removeRoom(roomID)) {
+                showError(
+                        "The room could not be removed. "
+                                + "It may have an active booking.");
+                return;
+            }
+
+            loadRooms();
+        });
+
+        refreshButton.addActionListener(
+                event -> loadRooms());
+
+        backButton.addActionListener(
+                event -> mainUI.showPanel(
+                        MainUI.ADMIN_DASHBOARD));
+
+        controls.add(new JLabel("ID:"));
+        controls.add(roomIDField);
+
+        controls.add(new JLabel("Capacity:"));
+        controls.add(capacityField);
+
+### /mnt/data/ycs_work/src/main/java/scheduler/gui/SensorPanel.java
+package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+
+import scheduler.booking.BookingSystemFacade;
+import scheduler.room.Room;
+import scheduler.sensor.HardwareSensor;
+
+public class SensorPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+    private final BookingSystemFacade facade;
+    private final DefaultTableModel tableModel;
+    private final JTable sensorTable;
+
+    public SensorPanel(MainUI mainUI) {
+        facade = BookingSystemFacade.getInstance();
+
+        setLayout(new BorderLayout(15, 15));
+        setBorder(
+                BorderFactory.createEmptyBorder(
+                        20, 20, 20, 20));
+
+        JLabel titleLabel =
+                new JLabel(
+                        "Room Sensor Status",
+                        JLabel.CENTER);
+
+        titleLabel.setFont(
+                titleLabel.getFont().deriveFont(24f));
+
+        add(titleLabel, BorderLayout.NORTH);
+
+        tableModel = new DefaultTableModel(
+                new Object[] {
+                        "Sensor ID",
+                        "Room ID",
+                        "Occupancy",
+                        "Maintenance",
+                        "Status"
+                },
+                0) {
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isCellEditable(
+                    int row,
+                    int column) {
+
+                return false;
+            }
+        };
+
+        sensorTable = new JTable(tableModel);
+        sensorTable.setFillsViewportHeight(true);
+
+        add(
+                new JScrollPane(sensorTable),
+                BorderLayout.CENTER);
+
+        JPanel buttonPanel =
+                new JPanel(
+                        new FlowLayout(
+                                FlowLayout.CENTER,
+                                10,
+                                5));
+
+        JButton refreshButton =
+                new JButton("Refresh");
+
+        JButton simulateButton =
+                new JButton(
+                        "Simulate Occupancy Change");
+
+        JButton backButton =
+                new JButton("Back");
+
+        refreshButton.addActionListener(
+                event -> loadSensors());
+
+        simulateButton.addActionListener(event -> {
+            int selectedRow =
+                    sensorTable.getSelectedRow();
+
+            if (selectedRow < 0) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Select a room first.",
+                        "Sensor Error",
+                        JOptionPane.ERROR_MESSAGE);
+
+                return;
+            }
+
+            String roomID =
+                    tableModel.getValueAt(
+                            selectedRow,
+                            1).toString();
+
+            Room room = facade.getRoom(roomID);
+
+            if (room == null) {
+                return;
+            }
+
+            HardwareSensor sensor =
+                    new HardwareSensor(
+                            "S-" + roomID,
+                            roomID);
+
+            sensor.attach(
+                    facade.getBookingManager());
+
+            sensor.detectOccupancy(
+                    !room.isOccupied());
+
+            loadSensors();
+        });
+
+        backButton.addActionListener(
+                event -> mainUI.showPanel(
+                        MainUI.ADMIN_DASHBOARD));
+
+        buttonPanel.add(refreshButton);
+        buttonPanel.add(simulateButton);
+        buttonPanel.add(backButton);
+
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        addComponentListener(
+                new ComponentAdapter() {
+                    @Override
+                    public void componentShown(
+                            ComponentEvent event) {
+
+                        loadSensors();
+                    }
+                });
+
+        loadSensors();
+    }
+
+    private void loadSensors() {
+        tableModel.setRowCount(0);
+
+        for (Room room
+                : facade.getRooms().values()) {
+
+            tableModel.addRow(new Object[] {
+                    "S-" + room.getRoomID(),
+                    room.getRoomID(),
+                    room.isOccupied()
+                            ? "Occupied"
+                            : "Empty",
+                    room.isMaintenance()
+                            ? "Yes"
+                            : "No",
+                    room.getStatus()
+            });
+        }
+    }
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/gui/UserDashboardPanel.java
+package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+public class UserDashboardPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+    public UserDashboardPanel(MainUI mainUI) {
+        setLayout(new BorderLayout(20, 20));
+        setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+
+        JLabel titleLabel = new JLabel("User Dashboard", JLabel.CENTER);
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 26f));
+        add(titleLabel, BorderLayout.NORTH);
+
+        JPanel actionPanel = new JPanel(new GridLayout(2, 2, 20, 20));
+
+        JButton bookRoomButton = new JButton("Book a Room");
+        JButton myBookingsButton = new JButton("My Bookings");
+        JButton paymentButton = new JButton("Payments");
+        JButton logoutButton = new JButton("Logout");
+
+        bookRoomButton.addActionListener(
+                event -> mainUI.showPanel(MainUI.ROOM_BOOKING));
+        myBookingsButton.addActionListener(
+                event -> mainUI.showUserBookings());
+        paymentButton.addActionListener(
+                event -> mainUI.showPanel(MainUI.PAYMENT));
+        logoutButton.addActionListener(
+                event -> mainUI.logout());
+
+        actionPanel.add(bookRoomButton);
+        actionPanel.add(myBookingsButton);
+        actionPanel.add(paymentButton);
+        actionPanel.add(logoutButton);
+
+        add(actionPanel, BorderLayout.CENTER);
+    }
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/payment/CreditCardPayment.java
+package scheduler.payment;
+
+public class CreditCardPayment implements PaymentStrategy{
+
+	@Override
+	public boolean processTransaction(double amount) {
+		System.out.println("Processing credit billing for: $" + amount);
+		return true;
+	}
+
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/payment/DebitCardPayment.java
+package scheduler.payment;
+
+public class DebitCardPayment implements PaymentStrategy{
+
+	@Override
+	public boolean processTransaction(double amount) {
+		System.out.println("Processing debit billing for: $" + amount);
+		return true;
+	}
+
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/payment/InstitutionBilling.java
+package scheduler.payment;
+
+public class InstitutionBilling implements PaymentStrategy{
+
+	@Override
+	public boolean processTransaction(double amount) {
+		System.out.println("Processing institutional billing for: $" + amount);
+		return true;
+	}
+
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/payment/PaymentStrategy.java
+package scheduler.payment;
+
+public interface PaymentStrategy {
+	
+	boolean processTransaction(double amount);
+
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/pricing/FacultyPricing.java
+package scheduler.pricing;
+
+public class FacultyPricing implements PricingStrategy{
+
+	@Override
+	public double getHourlyRate() {
+		return 30.0;
+	}
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/pricing/PartnerPricing.java
+package scheduler.pricing;
+
+public class PartnerPricing implements PricingStrategy{
+
+	@Override
+	public double getHourlyRate() {
+		return 50.0;
+	}
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/pricing/PricingStrategy.java
+package scheduler.pricing;
+
+public interface PricingStrategy {
+	double getHourlyRate();
+
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/pricing/StaffPricing.java
+package scheduler.pricing;
+
+public class StaffPricing implements PricingStrategy{
+
+	@Override
+	public double getHourlyRate() {
+		return 40.0;
+	}
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/pricing/StudentPricing.java
+package scheduler.pricing;
+
+public class StudentPricing implements PricingStrategy{
+
+	@Override
+	public double getHourlyRate() {
+		return 20.0;
+	}
+
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/room/AvailableState.java
+package scheduler.room;
+
+public class AvailableState implements RoomState {
+
+	@Override
+	public void handleReserve(Room room) {
+		if (room == null) {
+			throw new IllegalArgumentException("Room cannot be null.");
+		}
+
+		System.out.println("Room " + room.getRoomID() + " has been reserved.");
+
+		room.setState(new OccupiedState());
+	}
+
+	@Override
+	public void handleRelease(Room room) {
+		if (room == null) {
+			throw new IllegalArgumentException("Room cannot be null.");
+		}
+
+		System.out.println("Room " + room.getRoomID() + " is already available.");
+	}
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/room/MaintenanceState.java
+package scheduler.room;
+
+public class MaintenanceState implements RoomState {
+
+	@Override
+	public void handleReserve(Room room) {
+		if (room == null) {
+			throw new IllegalArgumentException("Room cannot be null.");
+		}
+
+		System.out.println("Room " + room.getRoomID() + " cannot be reserved because it is under maintenance.");
+	}
+
+	@Override
+	public void handleRelease(Room room) {
+		if (room == null) {
+			throw new IllegalArgumentException("Room cannot be null.");
+		}
+
+		System.out.println("Room " + room.getRoomID() + " cannot be released because it is under maintenance.");
+	}
+}### /mnt/data/ycs_work/src/main/java/scheduler/room/OccupiedState.java
+package scheduler.room;
+
+public class OccupiedState implements RoomState {
+
+	@Override
+	public void handleReserve(Room room) {
+		if (room == null) {
+			throw new IllegalArgumentException("Room cannot be null.");
+		}
+
+		System.out.println("Room " + room.getRoomID() + " cannot be reserved because it is occupied.");
+	}
+
+	@Override
+	public void handleRelease(Room room) {
+		if (room == null) {
+			throw new IllegalArgumentException("Room cannot be null.");
+		}
+
+		System.out.println("Room " + room.getRoomID() + " has been released.");
+
+		room.setState(new AvailableState());
+	}
+}### /mnt/data/ycs_work/src/main/java/scheduler/room/Room.java
+package scheduler.room;
+
+public class Room {
+
+    private String roomID;
+    private int capacity;
+    private String building;
+    private String roomNumber;
+    private boolean maintenance;
+    private String status;
+    private RoomState currentState;
+
+    public Room(String roomID, int capacity, String location) {
+        this(
+                roomID,
+                capacity,
+                location,
+                "",
+                false,
+                false,
+                "enabled");
+    }
+
+    public Room(
+            String roomID,
+            int capacity,
+            String building,
+            String roomNumber,
+            boolean occupied,
+            boolean maintenance,
+            String status) {
+
+        if (roomID == null || roomID.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Room ID cannot be empty.");
+        }
+
+        if (capacity <= 0) {
+            throw new IllegalArgumentException(
+                    "Room capacity must be greater than zero.");
+        }
+
+        if (building == null || building.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Room location cannot be empty.");
+        }
+
+        this.roomID = roomID;
+        this.capacity = capacity;
+        this.building = building;
+        this.roomNumber = roomNumber == null ? "" : roomNumber;
+        this.maintenance = maintenance;
+        this.status = status == null ? "enabled" : status;
+
+        if (maintenance
+                || "disabled".equalsIgnoreCase(this.status)) {
+            currentState = new MaintenanceState();
+        } else if (occupied) {
+            currentState = new OccupiedState();
+        } else {
+            currentState = new AvailableState();
+        }
+    }
+
+    public String getRoomID() {
+        return roomID;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public String getBuilding() {
+        return building;
+    }
+
+    public String getRoomNumber() {
+        return roomNumber;
+    }
+
+    public String getLocation() {
+        if (roomNumber.isBlank()) {
+            return building;
+        }
+
+        return building + " " + roomNumber;
+    }
+
+    public boolean isOccupied() {
+        return currentState instanceof OccupiedState;
+    }
+
+    public boolean isMaintenance() {
+        return maintenance
+                || currentState instanceof MaintenanceState;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public RoomState getCurrentState() {
+        return currentState;
+    }
+
+    public void setState(RoomState state) {
+        if (state == null) {
+            throw new IllegalArgumentException(
+                    "Room state cannot be null.");
+        }
+
+        currentState = state;
+        maintenance = state instanceof MaintenanceState;
+    }
+
+    public void reserve() {
+        currentState.handleReserve(this);
+    }
+
+    public void release() {
+        currentState.handleRelease(this);
+    }
+
+    @Override
+    public String toString() {
+        return "Room{"
+                + "roomID='" + roomID + '\''
+                + ", capacity=" + capacity
+                + ", location='" + getLocation() + '\''
+                + ", currentState="
+                + currentState.getClass().getSimpleName()
+                + '}';
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/room/RoomState.java
+package scheduler.room;
+
+public interface RoomState {
+
+	void handleReserve(Room room);
+
+	void handleRelease(Room room);
+}
+### /mnt/data/ycs_work/src/main/java/scheduler/sensor/HardwareSensor.java
+package scheduler.sensor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class HardwareSensor {
+
+    private String sensorID;
+    private String roomID;
+
+    private List<SensorObserver> observers = new ArrayList<>();
+
+    public HardwareSensor() {
+    }
+
+    public HardwareSensor(String sensorID, String roomID) {
+        this.sensorID = sensorID;
+        this.roomID = roomID;
+    }
+
+    public void attach(SensorObserver observer) {
+        if (observer != null && !observers.contains(observer)) {
+            observers.add(observer);
+        }
+    }
+
+    public void detach(SensorObserver observer) {
+        observers.remove(observer);
+    }
+
+    public void notifyObservers(String data) {
+        for (SensorObserver observer : observers) {
+            observer.update(data);
+        }
+    }
+
+    public void detectOccupancy() {
+        detectOccupancy(true);
+    }
+
+    public void detectOccupancy(boolean occupied) {
+        if (roomID == null || roomID.isBlank()) {
+            return;
+        }
+
+        if (occupied) {
+            notifyObservers("OCCUPIED:" + roomID);
+        } else {
+            notifyObservers("EMPTY:" + roomID);
+        }
+    }
+
+    public void badgeScan(String badgeID) {
+        if (badgeID == null || badgeID.isBlank()) {
+            notifyObservers("INVALID_BADGE:" + roomID);
+            return;
+        }
+
+        notifyObservers(
+                "BADGE_SCAN:" + roomID + ":" + badgeID);
+    }
+
+    public String getSensorID() {
+        return sensorID;
+    }
+
+    public String getRoomID() {
+        return roomID;
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/sensor/SensorObserver.java
+package scheduler.sensor;
+
+public interface SensorObserver {
+
+    void update(String sensorData);
+
+}### /mnt/data/ycs_work/src/main/java/scheduler/user/Administrator.java
+package scheduler.user;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+import scheduler.room.Room;
+import scheduler.room.RoomState;
+
+public class Administrator extends User {
+
+	private String adminID;
+	private String email;
+	private Map<String, Room> rooms;
+
+    private static final Path ACCOUNTS_FILE = Path.of("accounts.csv");
+
+	Administrator(String email, String adminID) {
+		if (email == null || email.isBlank()) {
+			throw new IllegalArgumentException("Administrator email cannot be empty.");
+		}
+
+		if (adminID == null || adminID.isBlank()) {
+			throw new IllegalArgumentException("Administrator ID cannot be empty.");
+		}
+
+		this.email = email;
+		this.adminID = adminID;
+		this.rooms = new HashMap<>();
+	}
+
+    public static Administrator authenticate(String email, String password) {
+        if (email == null || email.isBlank() || password == null || password.isBlank()) {
+            return null;
+        }
+
+        if (!Files.exists(ACCOUNTS_FILE)) {
+            throw new IllegalStateException("The accounts.csv file could not be found.");
+        }
+
+        try {
+            List<String> lines = Files.readAllLines(ACCOUNTS_FILE);
+            // Start at 1 to skip the CSV header.
+            for (int i = 1; i < lines.size(); i++) {
+                String line = lines.get(i).trim();
+
+                if (line.isEmpty()) {
+                    continue;
+                }
+
+                String[] account = line.split(",", -1);
+
+                if (account.length < 6) {
+                    continue;
+                }
+
+                String adminID = account[0].trim();
+                String storedEmail = account[1].trim();
+                String storedPassword = account[2];
+                String accountType = account[4].trim();
+                boolean verified = Boolean.parseBoolean(account[5].trim());
+
+                boolean isAdministrator = accountType.equalsIgnoreCase("administrator");
+
+                boolean emailMatches = storedEmail.equalsIgnoreCase(email);
+
+                boolean passwordMatches = storedPassword.equals(password);
+
+                if (isAdministrator && emailMatches && passwordMatches && verified) {
+                    return new Administrator(storedEmail,adminID);
+                }
+            }
+
+            return null;
+
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "Could not read administrator accounts.",
+                    exception);
+        }
+    }
+
+	public void addRoom(String roomID, int capacity, String location) {
+		if (rooms.containsKey(roomID)) {
+			throw new IllegalArgumentException("Room " + roomID + " already exists.");
+		}
+
+		Room room = new Room(roomID, capacity, location);
+		rooms.put(roomID, room);
+	}
+
+	public void setRoomState(String roomID, RoomState state) {
+		if (state == null) {
+			throw new IllegalArgumentException("Room state cannot be null.");
+		}
+
+		Room room = rooms.get(roomID);
+
+		if (room == null) {
+			throw new IllegalArgumentException("Room " + roomID + " does not exist.");
+		}
+
+		room.setState(state);
+	}
+
+	public Room getRoom(String roomID) {
+		return rooms.get(roomID);
+	}
+
+	public Map<String, Room> getRooms() {
+		return rooms;
+	}
+
+    public String getAdminID() {
+        return adminID;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/user/ChiefEventCoordinator.java
+package scheduler.user;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.security.SecureRandom;
+import java.util.List;
+
+import javax.swing.JOptionPane;
+
+public class ChiefEventCoordinator {
+
+    private static ChiefEventCoordinator instance;
+
+    private static final String COORDINATOR_EMAIL = "chief@yorku.ca";
+    private static final String COORDINATOR_PASSWORD = "Chief123!";
+
+    private static final Path ACCOUNTS_FILE = Path.of("accounts.csv");
+
+    private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+    private static final String NUMBERS = "0123456789";
+    private static final String SYMBOLS = "!@#$%^&*";
+    private static final String ALL_CHARACTERS =
+            UPPERCASE + LOWERCASE + NUMBERS + SYMBOLS;
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    private ChiefEventCoordinator() {
+    }
+
+    public static ChiefEventCoordinator getInstance() {
+        if (instance == null) {
+            instance = new ChiefEventCoordinator();
+        }
+
+        return instance;
+    }
+
+    public boolean authenticate(String email, String password) {
+        return COORDINATOR_EMAIL.equalsIgnoreCase(email)
+                && COORDINATOR_PASSWORD.equals(password);
+    }
+
+    public Administrator generateAdminAccount(
+            String email,
+            String adminID) {
+
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Administrator email cannot be empty.");
+        }
+
+        if (adminID == null || adminID.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Administrator ID cannot be empty.");
+        }
+
+        if (accountExists(email, adminID)) {
+            throw new IllegalArgumentException(
+                    "An account with this email or ID already exists.");
+        }
+
+        String password = generateRandomPassword();
+
+        String accountRow = String.join(",",
+                clean(adminID),
+                clean(email),
+                clean(password),
+                "ADMIN",
+                "administrator",
+                "true");
+
+        try {
+            Files.writeString(
+                    ACCOUNTS_FILE,
+                    System.lineSeparator() + accountRow,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND);
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "Could not save the administrator account.",
+                    exception);
+        }
+
+        Administrator administrator =
+                new Administrator(email, adminID);
+
+        JOptionPane.showMessageDialog(
+                null,
+                "Administrator account created successfully.\n\n"
+                        + "Email: " + email + "\n"
+                        + "Password: " + password,
+                "Administrator Account Created",
+                JOptionPane.INFORMATION_MESSAGE);
+
+        return administrator;
+    }
+
+    private boolean accountExists(String email, String adminID) {
+        if (!Files.exists(ACCOUNTS_FILE)) {
+            return false;
+        }
+
+        try {
+            List<String> lines = Files.readAllLines(ACCOUNTS_FILE);
+
+            for (int i = 1; i < lines.size(); i++) {
+                String[] account = lines.get(i).split(",", -1);
+
+                if (account.length < 2) {
+                    continue;
+                }
+
+                String existingID = account[0].trim();
+                String existingEmail = account[1].trim();
+
+                if (existingID.equalsIgnoreCase(adminID)
+                        || existingEmail.equalsIgnoreCase(email)) {
+                    return true;
+                }
+            }
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "Could not read existing accounts.",
+                    exception);
+        }
+
+        return false;
+    }
+
+    private String generateRandomPassword() {
+        StringBuilder password = new StringBuilder();
+
+        // Guarantee that the password passes the strong-password rules.
+        password.append(randomCharacter(UPPERCASE));
+        password.append(randomCharacter(LOWERCASE));
+        password.append(randomCharacter(NUMBERS));
+        password.append(randomCharacter(SYMBOLS));
+
+        while (password.length() < 12) {
+            password.append(randomCharacter(ALL_CHARACTERS));
+        }
+
+        // Randomize the positions of the required characters.
+        for (int i = password.length() - 1; i > 0; i--) {
+            int randomIndex = RANDOM.nextInt(i + 1);
+
+            char character = password.charAt(i);
+
+            password.setCharAt(
+                    i,
+                    password.charAt(randomIndex));
+
+            password.setCharAt(
+                    randomIndex,
+                    character);
+        }
+
+        return password.toString();
+    }
+
+    private char randomCharacter(String characters) {
+        return characters.charAt(
+                RANDOM.nextInt(characters.length()));
+    }
+
+    private String clean(String value) {
+        return value.replace(",", " ").trim();
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/user/Faculty.java
+package scheduler.user;
+
+public class Faculty extends User {
+
+    public Faculty() {
+    }
+
+    public Faculty(String userID, String email, String password,
+            String organizationID, boolean isVerified) {
+
+        super(userID, email, password, organizationID, isVerified);
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/user/Partner.java
+package scheduler.user;
+
+public class Partner extends User {
+
+    public Partner() {
+    }
+
+    public Partner(String userID, String email, String password,
+            String organizationID, boolean isVerified) {
+
+        super(userID, email, password, organizationID, isVerified);
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/user/Staff.java
+package scheduler.user;
+
+public class Staff extends User {
+
+    public Staff() {
+    }
+
+    public Staff(String userID, String email, String password,
+            String organizationID, boolean isVerified) {
+
+        super(userID, email, password, organizationID, isVerified);
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/user/Student.java
+package scheduler.user;
+
+public class Student extends User {
+
+    public Student() {
+    }
+
+    public Student(String userID, String email, String password,
+            String studentNumber, boolean isVerified) {
+
+        super(userID, email, password, studentNumber, isVerified);
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/user/User.java
+package scheduler.user;
+
+public abstract class User {
+
+    protected String userID;
+    protected String email;
+    protected String password;
+    protected String orgID;
+    protected boolean isVerified;
+
+    public User() {
+    }
+
+    public User(String userID, String email, String password,
+            String orgID, boolean isVerified) {
+
+        this.userID = userID;
+        this.email = email;
+        this.password = password;
+        this.orgID = orgID;
+        this.isVerified = isVerified;
+    }
+
+    public String getUserID() {
+        return userID;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getOrgID() {
+        return orgID;
+    }
+
+    public boolean isVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.isVerified = verified;
+    }
+
+    public boolean checkPassword(String enteredPassword) {
+        return password != null && password.equals(enteredPassword);
+    }
+
+    public String getAccountType() {
+        return getClass().getSimpleName();
+    }
+}### /mnt/data/ycs_work/src/main/java/scheduler/user/UserFactory.java
+package scheduler.user;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import scheduler.database.CsvDatabase;
+
+public class UserFactory {
+
+    private static final Map<String, User> usersByID = new HashMap<>();
+    private static final Map<String, User> usersByEmail = new HashMap<>();
+
+    static {
+        loadUsers();
+    }
+
+    public User createUser(String type, Map<String, Object> details) {
+
+        if (type == null || type.trim().isEmpty()) {
+            throw new IllegalArgumentException("Account type is required.");
+        }
+
+        if (details == null) {
+            throw new IllegalArgumentException("User details are required.");
+        }
+
+        String userID = getRequiredString(details, "userID");
+        String email = getRequiredString(details, "email");
+        String password = getRequiredString(details, "password");
+        String orgID = getRequiredString(details, "orgID");
+
+        validateEmail(email);
+        validatePassword(password);
+
+        String normalizedUserID = userID.toLowerCase();
+        String normalizedEmail = email.toLowerCase();
+
+        if (usersByID.containsKey(normalizedUserID)) {
+            throw new IllegalArgumentException(
+                    "A user with this user ID already exists.");
+        }
+
+        if (usersByEmail.containsKey(normalizedEmail)) {
+            throw new IllegalArgumentException(
+                    "An account with this email already exists.");
+        }
+
+        boolean universityAccount = isUniversityAccount(type);
+        boolean verified = !universityAccount || isYorkEmail(email);
+
+        User user = createUserObject(
+                type,
+                userID,
+                email,
+                password,
+                orgID,
+                verified);
+
+        storeUser(user);
+
+        CsvDatabase.append(
+                CsvDatabase.ACCOUNTS_FILE,
+                String.join(",",
+                        CsvDatabase.clean(userID),
+                        CsvDatabase.clean(email),
+                        CsvDatabase.clean(password),
+                        CsvDatabase.clean(orgID),
+                        CsvDatabase.clean(type.toLowerCase()),
+                        Boolean.toString(verified)));
+
+        return user;
+    }
+
+    public User getUserByID(String userID) {
+        if (userID == null || userID.isBlank()) {
+            return null;
+        }
+
+        return usersByID.get(userID.trim().toLowerCase());
+    }
+
+    public User getUserByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+
+        return usersByEmail.get(email.trim().toLowerCase());
+    }
+
+    public boolean isEmailRegistered(String email) {
+        if (email == null || email.isBlank()) {
+            return false;
+        }
+
+        return usersByEmail.containsKey(email.trim().toLowerCase());
+    }
+
+    public boolean isValidEmail(String email) {
+        if (email == null) {
+            return false;
+        }
+
+        return email.matches(
+                "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    }
+
+    public boolean isStrongPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+
+        boolean hasUppercase = password.matches(".*[A-Z].*");
+        boolean hasLowercase = password.matches(".*[a-z].*");
+        boolean hasNumber = password.matches(".*\\d.*");
+        boolean hasSymbol = password.matches(".*[^A-Za-z0-9].*");
+
+        return hasUppercase
+                && hasLowercase
+                && hasNumber
+                && hasSymbol;
+    }
+
+    private static void loadUsers() {
+        for (String[] row
+                : CsvDatabase.read(CsvDatabase.ACCOUNTS_FILE)) {
+
+            if (row.length < 6) {
+                continue;
+            }
+
+            String userID = row[0].trim();
+            String email = row[1].trim();
+            String password = row[2];
+            String orgID = row[3].trim();
+            String accountType = row[4].trim();
+            boolean verified = Boolean.parseBoolean(row[5].trim());
+
+            try {
+                User user = createUserObject(
+                        accountType,
+                        userID,
+                        email,
+                        password,
+                        orgID,
+                        verified);
+
+                storeUser(user);
+            } catch (IllegalArgumentException exception) {
+                System.err.println(
+                        "Skipped invalid account row for user: " + userID);
+            }
+        }
+    }
+
+    private static User createUserObject(
+            String type,
+            String userID,
+            String email,
+            String password,
+            String orgID,
+            boolean verified) {
+
+        switch (type.trim().toLowerCase()) {
+        case "student":
+            return new Student(
+                    userID, email, password, orgID, verified);
+
+        case "faculty":
+            return new Faculty(
+                    userID, email, password, orgID, verified);
+
+        case "staff":
+            return new Staff(
+                    userID, email, password, orgID, verified);
+
+        case "partner":
+            return new Partner(
+                    userID, email, password, orgID, verified);
+
+        default:
+            throw new IllegalArgumentException(
+                    "Unsupported account type: " + type);
+        }
+    }
+
+    private static void storeUser(User user) {
+        usersByID.put(
+                user.getUserID().toLowerCase(),
+                user);
+
+        usersByEmail.put(
+                user.getEmail().toLowerCase(),
+                user);
+    }
+
+    private String getRequiredString(
+            Map<String, Object> details,
+            String key) {
+
+        Object value = details.get(key);
+
+        if (value == null || value.toString().trim().isEmpty()) {
+            throw new IllegalArgumentException(key + " is required.");
+        }
+
+        return value.toString().trim();
+    }
+
+    private void validateEmail(String email) {
+        if (!isValidEmail(email)) {
+            throw new IllegalArgumentException(
+                    "A valid email address is required.");
+        }
+    }
+
+    private void validatePassword(String password) {
+        if (!isStrongPassword(password)) {
+            throw new IllegalArgumentException(
+                    "Password must contain at least 8 characters, "
+                    + "including uppercase, lowercase, a number, "
+                    + "and a symbol.");
+        }
+    }
+
+    private boolean isUniversityAccount(String type) {
+        String normalizedType = type.trim().toLowerCase();
+
+        return normalizedType.equals("student")
+                || normalizedType.equals("faculty")
+                || normalizedType.equals("staff");
+    }
+
+    private boolean isYorkEmail(String email) {
+        String normalizedEmail = email.toLowerCase();
+
+        return normalizedEmail.endsWith("@yorku.ca")
+                || normalizedEmail.endsWith("@my.yorku.ca");
+    }
+}
