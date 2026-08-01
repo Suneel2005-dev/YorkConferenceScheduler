@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChiefEventCoordinator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">York Conference Scheduler</a> &gt; <a href="index.source.html" class="el_package">scheduler.user</a> &gt; <span class="el_source">ChiefEventCoordinator.java</span></div><h1>ChiefEventCoordinator.java</h1><pre class="source lang-java linenums">package scheduler.user;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.security.SecureRandom;
+import java.util.List;
+
+import javax.swing.JOptionPane;
+
+public class ChiefEventCoordinator {
+
+    private static ChiefEventCoordinator instance;
+
+    private static final String COORDINATOR_EMAIL = &quot;chief@yorku.ca&quot;;
+    private static final String COORDINATOR_PASSWORD = &quot;Chief123!&quot;;
+
+<span class="nc" id="L19">    private static final Path ACCOUNTS_FILE = Path.of(&quot;accounts.csv&quot;);</span>
+
+    private static final String UPPERCASE = &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;;
+    private static final String LOWERCASE = &quot;abcdefghijklmnopqrstuvwxyz&quot;;
+    private static final String NUMBERS = &quot;0123456789&quot;;
+    private static final String SYMBOLS = &quot;!@#$%^&amp;*&quot;;
+    private static final String ALL_CHARACTERS =
+            UPPERCASE + LOWERCASE + NUMBERS + SYMBOLS;
+
+<span class="nc" id="L28">    private static final SecureRandom RANDOM = new SecureRandom();</span>
+
+    private ChiefEventCoordinator() {
+    }
+
+    public static ChiefEventCoordinator getInstance() {
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (instance == null) {</span>
+<span class="nc" id="L35">            instance = new ChiefEventCoordinator();</span>
+        }
+
+<span class="nc" id="L38">        return instance;</span>
+    }
+
+    public boolean authenticate(String email, String password) {
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        return COORDINATOR_EMAIL.equalsIgnoreCase(email)</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">                &amp;&amp; COORDINATOR_PASSWORD.equals(password);</span>
+    }
+
+    public Administrator generateAdminAccount(
+            String email,
+            String adminID) {
+
+<span class="nc bnc" id="L50" title="All 4 branches missed.">        if (email == null || email.isBlank()) {</span>
+<span class="nc" id="L51">            throw new IllegalArgumentException(</span>
+                    &quot;Administrator email cannot be empty.&quot;);
+        }
+
+<span class="nc bnc" id="L55" title="All 4 branches missed.">        if (adminID == null || adminID.isBlank()) {</span>
+<span class="nc" id="L56">            throw new IllegalArgumentException(</span>
+                    &quot;Administrator ID cannot be empty.&quot;);
+        }
+
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (accountExists(email, adminID)) {</span>
+<span class="nc" id="L61">            throw new IllegalArgumentException(</span>
+                    &quot;An account with this email or ID already exists.&quot;);
+        }
+
+<span class="nc" id="L65">        String password = generateRandomPassword();</span>
+
+<span class="nc" id="L67">        String accountRow = String.join(&quot;,&quot;,</span>
+<span class="nc" id="L68">                clean(adminID),</span>
+<span class="nc" id="L69">                clean(email),</span>
+<span class="nc" id="L70">                clean(password),</span>
+                &quot;ADMIN&quot;,
+                &quot;administrator&quot;,
+                &quot;true&quot;);
+
+        try {
+<span class="nc" id="L76">            Files.writeString(</span>
+                    ACCOUNTS_FILE,
+<span class="nc" id="L78">                    System.lineSeparator() + accountRow,</span>
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND);
+<span class="nc" id="L81">        } catch (IOException exception) {</span>
+<span class="nc" id="L82">            throw new IllegalStateException(</span>
+                    &quot;Could not save the administrator account.&quot;,
+                    exception);
+<span class="nc" id="L85">        }</span>
+
+<span class="nc" id="L87">        Administrator administrator =</span>
+                new Administrator(email, adminID);
+
+<span class="nc" id="L90">        JOptionPane.showMessageDialog(</span>
+                null,
+                &quot;Administrator account created successfully.\n\n&quot;
+                        + &quot;Email: &quot; + email + &quot;\n&quot;
+                        + &quot;Password: &quot; + password,
+                &quot;Administrator Account Created&quot;,
+                JOptionPane.INFORMATION_MESSAGE);
+
+<span class="nc" id="L98">        return administrator;</span>
+    }
+
+    private boolean accountExists(String email, String adminID) {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (!Files.exists(ACCOUNTS_FILE)) {</span>
+<span class="nc" id="L103">            return false;</span>
+        }
+
+        try {
+<span class="nc" id="L107">            List&lt;String&gt; lines = Files.readAllLines(ACCOUNTS_FILE);</span>
+
+<span class="nc bnc" id="L109" title="All 2 branches missed.">            for (int i = 1; i &lt; lines.size(); i++) {</span>
+<span class="nc" id="L110">                String[] account = lines.get(i).split(&quot;,&quot;, -1);</span>
+
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                if (account.length &lt; 2) {</span>
+<span class="nc" id="L113">                    continue;</span>
+                }
+
+<span class="nc" id="L116">                String existingID = account[0].trim();</span>
+<span class="nc" id="L117">                String existingEmail = account[1].trim();</span>
+
+<span class="nc bnc" id="L119" title="All 2 branches missed.">                if (existingID.equalsIgnoreCase(adminID)</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                        || existingEmail.equalsIgnoreCase(email)) {</span>
+<span class="nc" id="L121">                    return true;</span>
+                }
+            }
+<span class="nc" id="L124">        } catch (IOException exception) {</span>
+<span class="nc" id="L125">            throw new IllegalStateException(</span>
+                    &quot;Could not read existing accounts.&quot;,
+                    exception);
+<span class="nc" id="L128">        }</span>
+
+<span class="nc" id="L130">        return false;</span>
+    }
+
+    private String generateRandomPassword() {
+<span class="nc" id="L134">        StringBuilder password = new StringBuilder();</span>
+
+        // Guarantee that the password passes the strong-password rules.
+<span class="nc" id="L137">        password.append(randomCharacter(UPPERCASE));</span>
+<span class="nc" id="L138">        password.append(randomCharacter(LOWERCASE));</span>
+<span class="nc" id="L139">        password.append(randomCharacter(NUMBERS));</span>
+<span class="nc" id="L140">        password.append(randomCharacter(SYMBOLS));</span>
+
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        while (password.length() &lt; 12) {</span>
+<span class="nc" id="L143">            password.append(randomCharacter(ALL_CHARACTERS));</span>
+        }
+
+        // Randomize the positions of the required characters.
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        for (int i = password.length() - 1; i &gt; 0; i--) {</span>
+<span class="nc" id="L148">            int randomIndex = RANDOM.nextInt(i + 1);</span>
+
+<span class="nc" id="L150">            char character = password.charAt(i);</span>
+
+<span class="nc" id="L152">            password.setCharAt(</span>
+                    i,
+<span class="nc" id="L154">                    password.charAt(randomIndex));</span>
+
+<span class="nc" id="L156">            password.setCharAt(</span>
+                    randomIndex,
+                    character);
+        }
+
+<span class="nc" id="L161">        return password.toString();</span>
+    }
+
+    private char randomCharacter(String characters) {
+<span class="nc" id="L165">        return characters.charAt(</span>
+<span class="nc" id="L166">                RANDOM.nextInt(characters.length()));</span>
+    }
+
+    private String clean(String value) {
+<span class="nc" id="L170">        return value.replace(&quot;,&quot;, &quot; &quot;).trim();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

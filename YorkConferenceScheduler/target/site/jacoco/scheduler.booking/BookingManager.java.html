@@ -1,0 +1,720 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookingManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">York Conference Scheduler</a> &gt; <a href="index.source.html" class="el_package">scheduler.booking</a> &gt; <span class="el_source">BookingManager.java</span></div><h1>BookingManager.java</h1><pre class="source lang-java linenums">package scheduler.booking;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import scheduler.database.CsvDatabase;
+import scheduler.payment.PaymentStrategy;
+import scheduler.pricing.FacultyPricing;
+import scheduler.pricing.PartnerPricing;
+import scheduler.pricing.PricingStrategy;
+import scheduler.pricing.StaffPricing;
+import scheduler.pricing.StudentPricing;
+import scheduler.room.AvailableState;
+import scheduler.room.MaintenanceState;
+import scheduler.room.OccupiedState;
+import scheduler.room.Room;
+import scheduler.sensor.SensorObserver;
+import scheduler.user.User;
+import scheduler.user.UserFactory;
+
+public class BookingManager implements SensorObserver {
+
+<span class="fc" id="L28">    private static final DateTimeFormatter CSV_DATE_FORMAT =</span>
+<span class="fc" id="L29">            DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd HH:mm:ss&quot;);</span>
+
+    private final List&lt;Booking&gt; activeBookings;
+    private final Map&lt;String, Room&gt; rooms;
+
+<span class="fc" id="L34">    public BookingManager() {</span>
+<span class="fc" id="L35">        activeBookings = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L36">        rooms = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L38">        loadRooms();</span>
+<span class="fc" id="L39">        loadBookings();</span>
+<span class="fc" id="L40">    }</span>
+
+    public boolean addRoom(Room room) {
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        if (room == null) {</span>
+<span class="nc" id="L44">            return false;</span>
+        }
+
+<span class="fc" id="L47">        String roomID = normalize(room.getRoomID());</span>
+
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (rooms.containsKey(roomID)) {</span>
+<span class="fc" id="L50">            return false;</span>
+        }
+
+<span class="fc" id="L53">        rooms.put(roomID, room);</span>
+<span class="fc" id="L54">        saveRooms();</span>
+
+<span class="fc" id="L56">        return true;</span>
+    }
+
+    public Room getRoom(String roomID) {
+<span class="pc bpc" id="L60" title="2 of 4 branches missed.">        if (roomID == null || roomID.isBlank()) {</span>
+<span class="nc" id="L61">            return null;</span>
+        }
+
+<span class="fc" id="L64">        return rooms.get(normalize(roomID));</span>
+    }
+
+    public Booking createBooking(
+            User user,
+            String roomID,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            PricingStrategy pricingStrategy,
+            PaymentStrategy paymentStrategy) {
+
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L76">            throw new IllegalArgumentException(&quot;User is required.&quot;);</span>
+        }
+
+<span class="nc" id="L79">        Room room = getRoom(roomID);</span>
+
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (room == null) {</span>
+<span class="nc" id="L82">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L83">                    &quot;The selected room does not exist.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (room.isMaintenance()</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                || &quot;disabled&quot;.equalsIgnoreCase(room.getStatus())) {</span>
+<span class="nc" id="L88">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L89">                    &quot;The selected room is disabled or under maintenance.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L92" title="All 4 branches missed.">        if (startTime == null || endTime == null) {</span>
+<span class="nc" id="L93">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L94">                    &quot;Start and end times are required.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (!endTime.isAfter(startTime)) {</span>
+<span class="nc" id="L98">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L99">                    &quot;End time must be after start time.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (startTime.isBefore(LocalDateTime.now())) {</span>
+<span class="nc" id="L103">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L104">                    &quot;A booking cannot start in the past.&quot;);</span>
+        }
+
+<span class="nc" id="L107">        if (!isRoomAvailable(</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                roomID, startTime, endTime, null)) {</span>
+
+<span class="nc" id="L110">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L111">                    &quot;The room is unavailable during the selected time.&quot;);</span>
+        }
+
+<span class="nc" id="L114">        Booking booking = new Booking(</span>
+<span class="nc" id="L115">                user,</span>
+<span class="nc" id="L116">                room,</span>
+<span class="nc" id="L117">                startTime,</span>
+<span class="nc" id="L118">                endTime,</span>
+<span class="nc" id="L119">                pricingStrategy,</span>
+<span class="nc" id="L120">                paymentStrategy);</span>
+
+<span class="nc" id="L122">        booking.setBookingID(generateBookingID());</span>
+
+<span class="nc" id="L124">        double deposit = booking.calculateUpfrontCost();</span>
+
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (paymentStrategy != null</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                &amp;&amp; !booking.executePayment(deposit)) {</span>
+
+<span class="nc" id="L129">            throw new IllegalStateException(</span>
+<span class="nc" id="L130">                    &quot;The upfront deposit payment was unsuccessful.&quot;);</span>
+        }
+
+<span class="nc" id="L133">        activeBookings.add(booking);</span>
+<span class="nc" id="L134">        saveBookings();</span>
+
+<span class="nc" id="L136">        return booking;</span>
+    }
+
+    public boolean isRoomAvailable(
+            String roomID,
+            LocalDateTime startTime,
+            LocalDateTime endTime) {
+
+<span class="nc" id="L144">        return isRoomAvailable(</span>
+<span class="nc" id="L145">                roomID, startTime, endTime, null);</span>
+    }
+
+    private boolean isRoomAvailable(
+            String roomID,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            Booking ignoredBooking) {
+
+<span class="nc" id="L154">        Room room = getRoom(roomID);</span>
+
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (room == null</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                || room.isMaintenance()</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                || &quot;disabled&quot;.equalsIgnoreCase(room.getStatus())</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                || startTime == null</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">                || endTime == null</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">                || !endTime.isAfter(startTime)) {</span>
+
+<span class="nc" id="L163">            return false;</span>
+        }
+
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        for (Booking booking : activeBookings) {</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            if (booking == ignoredBooking</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                    || booking.isCancelled()) {</span>
+<span class="nc" id="L169">                continue;</span>
+            }
+
+<span class="nc" id="L172">            boolean sameRoom =</span>
+<span class="nc" id="L173">                    booking.getRoom()</span>
+<span class="nc" id="L174">                            .getRoomID()</span>
+<span class="nc" id="L175">                            .equalsIgnoreCase(roomID);</span>
+
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (sameRoom</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">                    &amp;&amp; booking.overlaps(startTime, endTime)) {</span>
+<span class="nc" id="L179">                return false;</span>
+            }
+        }
+
+<span class="nc" id="L183">        return true;</span>
+    }
+
+    public Booking findBookingByUser(String userID) {
+<span class="nc bnc" id="L187" title="All 4 branches missed.">        if (userID == null || userID.isBlank()) {</span>
+<span class="nc" id="L188">            return null;</span>
+        }
+
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        for (Booking booking : activeBookings) {</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            if (!booking.isCancelled()</span>
+<span class="nc" id="L193">                    &amp;&amp; booking.getUser()</span>
+<span class="nc" id="L194">                            .getUserID()</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                            .equalsIgnoreCase(userID)) {</span>
+
+<span class="nc" id="L197">                return booking;</span>
+            }
+        }
+
+<span class="nc" id="L201">        return null;</span>
+    }
+
+    public List&lt;Booking&gt; getBookingsForUser(String userID) {
+<span class="nc" id="L205">        List&lt;Booking&gt; userBookings = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L207" title="All 4 branches missed.">        if (userID == null || userID.isBlank()) {</span>
+<span class="nc" id="L208">            return userBookings;</span>
+        }
+
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        for (Booking booking : activeBookings) {</span>
+<span class="nc" id="L212">            if (booking.getUser()</span>
+<span class="nc" id="L213">                    .getUserID()</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                    .equalsIgnoreCase(userID)) {</span>
+
+<span class="nc" id="L216">                userBookings.add(booking);</span>
+            }
+        }
+
+<span class="nc" id="L220">        return userBookings;</span>
+    }
+
+    public boolean modifyBooking(
+            String userID,
+            LocalDateTime newStart,
+            LocalDateTime newEnd) {
+
+<span class="nc" id="L228">        Booking booking = findBookingByUser(userID);</span>
+
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        if (booking == null</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">                || newStart == null</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">                || newEnd == null</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">                || !newEnd.isAfter(newStart)</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">                || newStart.isBefore(LocalDateTime.now())) {</span>
+
+<span class="nc" id="L236">            return false;</span>
+        }
+
+<span class="nc" id="L239">        String roomID = booking.getRoom().getRoomID();</span>
+
+<span class="nc" id="L241">        if (!isRoomAvailable(</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">                roomID, newStart, newEnd, booking)) {</span>
+<span class="nc" id="L243">            return false;</span>
+        }
+
+<span class="nc" id="L246">        booking.modifyTimes(newStart, newEnd);</span>
+<span class="nc" id="L247">        saveBookings();</span>
+
+<span class="nc" id="L249">        return true;</span>
+    }
+
+    public boolean cancelBooking(String userID) {
+<span class="nc" id="L253">        Booking booking = findBookingByUser(userID);</span>
+
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        if (booking == null) {</span>
+<span class="nc" id="L256">            return false;</span>
+        }
+
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        if (booking.isCheckedIn()) {</span>
+<span class="nc" id="L260">            booking.getRoom().release();</span>
+<span class="nc" id="L261">            saveRooms();</span>
+        }
+
+<span class="nc" id="L264">        booking.cancel();</span>
+<span class="nc" id="L265">        saveBookings();</span>
+
+<span class="nc" id="L267">        return true;</span>
+    }
+
+    public boolean extendBooking(
+            String userID,
+            int additionalHours) {
+
+<span class="nc" id="L274">        Booking booking = findBookingByUser(userID);</span>
+
+<span class="nc bnc" id="L276" title="All 4 branches missed.">        if (booking == null || additionalHours &lt;= 0) {</span>
+<span class="nc" id="L277">            return false;</span>
+        }
+
+<span class="nc" id="L280">        LocalDateTime proposedEnd =</span>
+<span class="nc" id="L281">                booking.getEndTime().plusHours(additionalHours);</span>
+
+<span class="nc" id="L283">        if (!isRoomAvailable(</span>
+<span class="nc" id="L284">                booking.getRoom().getRoomID(),</span>
+<span class="nc" id="L285">                booking.getStartTime(),</span>
+<span class="nc" id="L286">                proposedEnd,</span>
+<span class="nc bnc" id="L287" title="All 2 branches missed.">                booking)) {</span>
+
+<span class="nc" id="L289">            return false;</span>
+        }
+
+<span class="nc" id="L292">        boolean extended =</span>
+<span class="nc" id="L293">                booking.extendBooking(additionalHours);</span>
+
+<span class="nc bnc" id="L295" title="All 2 branches missed.">        if (extended) {</span>
+<span class="nc" id="L296">            saveBookings();</span>
+        }
+
+<span class="nc" id="L299">        return extended;</span>
+    }
+
+    @Override
+    public void update(String sensorData) {
+<span class="nc bnc" id="L304" title="All 4 branches missed.">        if (sensorData == null || sensorData.isBlank()) {</span>
+<span class="nc" id="L305">            return;</span>
+        }
+
+<span class="nc" id="L308">        String[] parts = sensorData.split(&quot;:&quot;);</span>
+
+<span class="nc bnc" id="L310" title="All 2 branches missed.">        if (parts.length == 2</span>
+<span class="nc bnc" id="L311" title="All 2 branches missed.">                &amp;&amp; &quot;OCCUPIED&quot;.equalsIgnoreCase(parts[0])) {</span>
+
+<span class="nc" id="L313">            Room room = getRoom(parts[1]);</span>
+
+<span class="nc bnc" id="L315" title="All 2 branches missed.">            if (room != null) {</span>
+<span class="nc" id="L316">                room.reserve();</span>
+<span class="nc" id="L317">                saveRooms();</span>
+            }
+
+<span class="nc" id="L320">            return;</span>
+        }
+
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        if (parts.length == 2</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">                &amp;&amp; &quot;EMPTY&quot;.equalsIgnoreCase(parts[0])) {</span>
+
+<span class="nc" id="L326">            Room room = getRoom(parts[1]);</span>
+
+<span class="nc bnc" id="L328" title="All 2 branches missed.">            if (room != null) {</span>
+<span class="nc" id="L329">                room.release();</span>
+<span class="nc" id="L330">                saveRooms();</span>
+            }
+
+<span class="nc" id="L333">            return;</span>
+        }
+
+<span class="nc bnc" id="L336" title="All 2 branches missed.">        if (parts.length == 3</span>
+<span class="nc bnc" id="L337" title="All 2 branches missed.">                &amp;&amp; &quot;BADGE_SCAN&quot;.equalsIgnoreCase(parts[0])) {</span>
+
+<span class="nc" id="L339">            processBadgeScan(parts[1], parts[2]);</span>
+        }
+<span class="nc" id="L341">    }</span>
+
+    private boolean processBadgeScan(
+            String roomID,
+            String userID) {
+
+<span class="nc" id="L347">        LocalDateTime now = LocalDateTime.now();</span>
+
+<span class="nc bnc" id="L349" title="All 2 branches missed.">        for (Booking booking : activeBookings) {</span>
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            if (booking.isCancelled()</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">                    || booking.isCheckedIn()) {</span>
+<span class="nc" id="L352">                continue;</span>
+            }
+
+<span class="nc" id="L355">            boolean correctRoom =</span>
+<span class="nc" id="L356">                    booking.getRoom()</span>
+<span class="nc" id="L357">                            .getRoomID()</span>
+<span class="nc" id="L358">                            .equalsIgnoreCase(roomID);</span>
+
+<span class="nc" id="L360">            boolean correctUser =</span>
+<span class="nc" id="L361">                    booking.getUser()</span>
+<span class="nc" id="L362">                            .getUserID()</span>
+<span class="nc" id="L363">                            .equalsIgnoreCase(userID);</span>
+
+<span class="nc" id="L365">            LocalDateTime earliestCheckIn =</span>
+<span class="nc" id="L366">                    booking.getStartTime().minusMinutes(30);</span>
+
+<span class="nc" id="L368">            LocalDateTime deadline =</span>
+<span class="nc" id="L369">                    booking.getStartTime().plusMinutes(30);</span>
+
+<span class="nc" id="L371">            boolean withinCheckInPeriod =</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">                    !now.isBefore(earliestCheckIn)</span>
+<span class="nc bnc" id="L373" title="All 2 branches missed.">                            &amp;&amp; !now.isAfter(deadline);</span>
+
+<span class="nc bnc" id="L375" title="All 2 branches missed.">            if (correctRoom</span>
+<span class="nc bnc" id="L376" title="All 2 branches missed.">                    &amp;&amp; correctUser</span>
+<span class="nc bnc" id="L377" title="All 2 branches missed.">                    &amp;&amp; withinCheckInPeriod) {</span>
+
+<span class="nc" id="L379">                booking.checkIn();</span>
+<span class="nc" id="L380">                booking.getRoom().reserve();</span>
+
+<span class="nc" id="L382">                saveBookings();</span>
+<span class="nc" id="L383">                saveRooms();</span>
+
+<span class="nc" id="L385">                return true;</span>
+            }
+        }
+
+<span class="nc" id="L389">        return false;</span>
+    }
+
+    public void checkTimeouts() {
+<span class="nc" id="L393">        LocalDateTime now = LocalDateTime.now();</span>
+<span class="nc" id="L394">        boolean changed = false;</span>
+
+<span class="nc bnc" id="L396" title="All 2 branches missed.">        for (Booking booking : activeBookings) {</span>
+<span class="nc bnc" id="L397" title="All 2 branches missed.">            if (booking.isCancelled()</span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">                    || booking.isCheckedIn()</span>
+<span class="nc bnc" id="L399" title="All 2 branches missed.">                    || booking.isDepositForfeited()) {</span>
+<span class="nc" id="L400">                continue;</span>
+            }
+
+<span class="nc" id="L403">            LocalDateTime deadline =</span>
+<span class="nc" id="L404">                    booking.getStartTime().plusMinutes(30);</span>
+
+<span class="nc bnc" id="L406" title="All 2 branches missed.">            if (now.isAfter(deadline)) {</span>
+<span class="nc" id="L407">                booking.forfeitDeposit();</span>
+<span class="nc" id="L408">                changed = true;</span>
+            }
+        }
+
+<span class="nc bnc" id="L412" title="All 2 branches missed.">        if (changed) {</span>
+<span class="nc" id="L413">            saveBookings();</span>
+        }
+<span class="nc" id="L415">    }</span>
+
+    public List&lt;Booking&gt; getActiveBookings() {
+<span class="nc" id="L418">        return Collections.unmodifiableList(activeBookings);</span>
+    }
+
+    public Map&lt;String, Room&gt; getRooms() {
+<span class="nc" id="L422">        return Collections.unmodifiableMap(rooms);</span>
+    }
+
+    private void loadRooms() {
+<span class="pc bpc" id="L426" title="1 of 2 branches missed.">        for (String[] row</span>
+<span class="pc" id="L427">                : CsvDatabase.read(CsvDatabase.ROOMS_FILE)) {</span>
+
+<span class="nc bnc" id="L429" title="All 2 branches missed.">            if (row.length &lt; 7) {</span>
+<span class="nc" id="L430">                continue;</span>
+            }
+
+            try {
+<span class="nc" id="L434">                Room room = new Room(</span>
+<span class="nc" id="L435">                        row[0].trim(),</span>
+<span class="nc" id="L436">                        Integer.parseInt(row[1].trim()),</span>
+<span class="nc" id="L437">                        row[2].trim(),</span>
+<span class="nc" id="L438">                        row[3].trim(),</span>
+<span class="nc" id="L439">                        Boolean.parseBoolean(row[4].trim()),</span>
+<span class="nc" id="L440">                        Boolean.parseBoolean(row[5].trim()),</span>
+<span class="nc" id="L441">                        row[6].trim());</span>
+
+<span class="nc" id="L443">                rooms.put(</span>
+<span class="nc" id="L444">                        normalize(room.getRoomID()),</span>
+<span class="nc" id="L445">                        room);</span>
+<span class="nc" id="L446">            } catch (RuntimeException exception) {</span>
+<span class="nc" id="L447">                System.err.println(</span>
+<span class="nc" id="L448">                        &quot;Skipped invalid room row: &quot; + row[0]);</span>
+            }
+        }
+<span class="fc" id="L451">    }</span>
+
+    private void loadBookings() {
+<span class="fc" id="L454">        UserFactory userFactory = new UserFactory();</span>
+
+<span class="pc bpc" id="L456" title="1 of 2 branches missed.">        for (String[] row</span>
+<span class="pc" id="L457">                : CsvDatabase.read(CsvDatabase.BOOKINGS_FILE)) {</span>
+
+<span class="nc bnc" id="L459" title="All 2 branches missed.">            if (row.length &lt; 11) {</span>
+<span class="nc" id="L460">                continue;</span>
+            }
+
+            try {
+<span class="nc" id="L464">                String bookingID = row[0].trim();</span>
+<span class="nc" id="L465">                User user = userFactory.getUserByID(row[1].trim());</span>
+<span class="nc" id="L466">                Room room = getRoom(row[2].trim());</span>
+
+<span class="nc bnc" id="L468" title="All 4 branches missed.">                if (user == null || room == null) {</span>
+<span class="nc" id="L469">                    continue;</span>
+                }
+
+<span class="nc" id="L472">                LocalDateTime startTime =</span>
+<span class="nc" id="L473">                        LocalDateTime.parse(</span>
+<span class="nc" id="L474">                                row[3].trim(),</span>
+<span class="nc" id="L475">                                CSV_DATE_FORMAT);</span>
+
+<span class="nc" id="L477">                LocalDateTime endTime =</span>
+<span class="nc" id="L478">                        LocalDateTime.parse(</span>
+<span class="nc" id="L479">                                row[4].trim(),</span>
+<span class="nc" id="L480">                                CSV_DATE_FORMAT);</span>
+
+<span class="nc" id="L482">                boolean checkedIn =</span>
+<span class="nc" id="L483">                        Boolean.parseBoolean(row[5].trim());</span>
+
+<span class="nc" id="L485">                boolean cancelled =</span>
+<span class="nc" id="L486">                        Boolean.parseBoolean(row[6].trim());</span>
+
+<span class="nc" id="L488">                boolean depositForfeited =</span>
+<span class="nc" id="L489">                        Boolean.parseBoolean(row[7].trim());</span>
+
+<span class="nc" id="L491">                double upfrontDeposit =</span>
+<span class="nc" id="L492">                        Double.parseDouble(row[8].trim());</span>
+
+<span class="nc" id="L494">                Booking booking = new Booking(</span>
+<span class="nc" id="L495">                        bookingID,</span>
+<span class="nc" id="L496">                        user,</span>
+<span class="nc" id="L497">                        room,</span>
+<span class="nc" id="L498">                        startTime,</span>
+<span class="nc" id="L499">                        endTime,</span>
+<span class="nc" id="L500">                        pricingFor(user),</span>
+<span class="nc" id="L501">                        null,</span>
+<span class="nc" id="L502">                        checkedIn,</span>
+<span class="nc" id="L503">                        cancelled,</span>
+<span class="nc" id="L504">                        depositForfeited,</span>
+<span class="nc" id="L505">                        upfrontDeposit);</span>
+
+<span class="nc" id="L507">                activeBookings.add(booking);</span>
+<span class="nc" id="L508">            } catch (RuntimeException exception) {</span>
+<span class="nc" id="L509">                System.err.println(</span>
+<span class="nc" id="L510">                        &quot;Skipped invalid booking row: &quot; + row[0]);</span>
+            }
+        }
+<span class="fc" id="L513">    }</span>
+
+    private void saveRooms() {
+<span class="fc" id="L516">        List&lt;String&gt; rows = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L518" title="All 2 branches covered.">        for (Room room : rooms.values()) {</span>
+<span class="fc" id="L519">            rows.add(String.join(&quot;,&quot;,</span>
+<span class="fc" id="L520">                    CsvDatabase.clean(room.getRoomID()),</span>
+<span class="fc" id="L521">                    Integer.toString(room.getCapacity()),</span>
+<span class="fc" id="L522">                    CsvDatabase.clean(room.getBuilding()),</span>
+<span class="fc" id="L523">                    CsvDatabase.clean(room.getRoomNumber()),</span>
+<span class="fc" id="L524">                    Boolean.toString(room.isOccupied()),</span>
+<span class="fc" id="L525">                    Boolean.toString(room.isMaintenance()),</span>
+<span class="fc" id="L526">                    CsvDatabase.clean(room.getStatus())));</span>
+        }
+
+<span class="fc" id="L529">        CsvDatabase.replaceRows(</span>
+<span class="fc" id="L530">                CsvDatabase.ROOMS_FILE,</span>
+<span class="fc" id="L531">                &quot;roomID,capacity,building,room,&quot;</span>
+                        + &quot;occupied,maintenance,status&quot;,
+<span class="fc" id="L533">                rows);</span>
+<span class="fc" id="L534">    }</span>
+
+    private void saveBookings() {
+<span class="nc" id="L537">        List&lt;String&gt; rows = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L539" title="All 2 branches missed.">        for (Booking booking : activeBookings) {</span>
+<span class="nc" id="L540">            rows.add(String.join(&quot;,&quot;,</span>
+<span class="nc" id="L541">                    CsvDatabase.clean(booking.getBookingID()),</span>
+<span class="nc" id="L542">                    CsvDatabase.clean(</span>
+<span class="nc" id="L543">                            booking.getUser().getUserID()),</span>
+<span class="nc" id="L544">                    CsvDatabase.clean(</span>
+<span class="nc" id="L545">                            booking.getRoom().getRoomID()),</span>
+<span class="nc" id="L546">                    booking.getStartTime()</span>
+<span class="nc" id="L547">                            .format(CSV_DATE_FORMAT),</span>
+<span class="nc" id="L548">                    booking.getEndTime()</span>
+<span class="nc" id="L549">                            .format(CSV_DATE_FORMAT),</span>
+<span class="nc" id="L550">                    Boolean.toString(booking.isCheckedIn()),</span>
+<span class="nc" id="L551">                    Boolean.toString(booking.isCancelled()),</span>
+<span class="nc" id="L552">                    Boolean.toString(</span>
+<span class="nc" id="L553">                            booking.isDepositForfeited()),</span>
+<span class="nc" id="L554">                    String.format(</span>
+<span class="nc" id="L555">                            java.util.Locale.US,</span>
+<span class="nc" id="L556">                            &quot;%.2f&quot;,</span>
+<span class="nc" id="L557">                            booking.getUpfrontDeposit()),</span>
+<span class="nc" id="L558">                    String.format(</span>
+<span class="nc" id="L559">                            java.util.Locale.US,</span>
+<span class="nc" id="L560">                            &quot;%.2f&quot;,</span>
+<span class="nc" id="L561">                            booking.getPricingStrategy()</span>
+<span class="nc" id="L562">                                    .getHourlyRate()),</span>
+<span class="nc" id="L563">                    paymentTypeFor(booking)));</span>
+        }
+
+<span class="nc" id="L566">        CsvDatabase.replaceRows(</span>
+<span class="nc" id="L567">                CsvDatabase.BOOKINGS_FILE,</span>
+<span class="nc" id="L568">                &quot;bookingID,userID,roomID,startTime,endTime,&quot;</span>
+                        + &quot;checkedIn,cancelled,depositForfeited,&quot;
+                        + &quot;upfrontDeposit,hourlyRate,paymentType&quot;,
+<span class="nc" id="L571">                rows);</span>
+<span class="nc" id="L572">    }</span>
+
+    private String generateBookingID() {
+<span class="nc" id="L575">        int largestID = 0;</span>
+
+<span class="nc bnc" id="L577" title="All 2 branches missed.">        for (Booking booking : activeBookings) {</span>
+<span class="nc" id="L578">            String bookingID = booking.getBookingID();</span>
+
+<span class="nc bnc" id="L580" title="All 2 branches missed.">            if (bookingID == null</span>
+<span class="nc bnc" id="L581" title="All 2 branches missed.">                    || !bookingID.matches(&quot;B\\d+&quot;)) {</span>
+<span class="nc" id="L582">                continue;</span>
+            }
+
+<span class="nc" id="L585">            largestID = Math.max(</span>
+<span class="nc" id="L586">                    largestID,</span>
+<span class="nc" id="L587">                    Integer.parseInt(bookingID.substring(1)));</span>
+        }
+
+<span class="nc" id="L590">        return String.format(&quot;B%03d&quot;, largestID + 1);</span>
+    }
+
+    private PricingStrategy pricingFor(User user) {
+<span class="nc bnc" id="L594" title="All 5 branches missed.">        switch (user.getAccountType().toLowerCase()) {</span>
+        case &quot;student&quot;:
+<span class="nc" id="L596">            return new StudentPricing();</span>
+
+        case &quot;faculty&quot;:
+<span class="nc" id="L599">            return new FacultyPricing();</span>
+
+        case &quot;staff&quot;:
+<span class="nc" id="L602">            return new StaffPricing();</span>
+
+        case &quot;partner&quot;:
+<span class="nc" id="L605">            return new PartnerPricing();</span>
+
+        default:
+<span class="nc" id="L608">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L609">                    &quot;Unknown account type.&quot;);</span>
+        }
+    }
+
+    private String paymentTypeFor(Booking booking) {
+<span class="nc bnc" id="L614" title="All 2 branches missed.">        if (booking.getPaymentStrategy() == null) {</span>
+<span class="nc" id="L615">            return &quot;&quot;;</span>
+        }
+
+<span class="nc" id="L618">        String name = booking.getPaymentStrategy()</span>
+<span class="nc" id="L619">                .getClass()</span>
+<span class="nc" id="L620">                .getSimpleName();</span>
+
+<span class="nc bnc" id="L622" title="All 2 branches missed.">        if (&quot;CreditCardPayment&quot;.equals(name)) {</span>
+<span class="nc" id="L623">            return &quot;credit_card&quot;;</span>
+        }
+
+<span class="nc bnc" id="L626" title="All 2 branches missed.">        if (&quot;DebitCardPayment&quot;.equals(name)) {</span>
+<span class="nc" id="L627">            return &quot;debit_card&quot;;</span>
+        }
+
+<span class="nc bnc" id="L630" title="All 2 branches missed.">        if (&quot;InstitutionBilling&quot;.equals(name)) {</span>
+<span class="nc" id="L631">            return &quot;institution_billing&quot;;</span>
+        }
+
+<span class="nc" id="L634">        return name.toLowerCase();</span>
+    }
+
+    private String normalize(String value) {
+<span class="fc" id="L638">        return value.trim().toLowerCase();</span>
+    }
+
+    public boolean removeRoom(String roomID) {
+<span class="nc" id="L642">        Room room = getRoom(roomID);</span>
+
+<span class="nc bnc" id="L644" title="All 2 branches missed.">        if (room == null) {</span>
+<span class="nc" id="L645">            return false;</span>
+        }
+
+<span class="nc bnc" id="L648" title="All 2 branches missed.">        for (Booking booking : activeBookings) {</span>
+<span class="nc bnc" id="L649" title="All 2 branches missed.">            if (!booking.isCancelled()</span>
+<span class="nc" id="L650">                    &amp;&amp; booking.getRoom()</span>
+<span class="nc" id="L651">                            .getRoomID()</span>
+<span class="nc bnc" id="L652" title="All 2 branches missed.">                            .equalsIgnoreCase(roomID)) {</span>
+
+<span class="nc" id="L654">                return false;</span>
+            }
+        }
+
+<span class="nc" id="L658">        rooms.remove(normalize(roomID));</span>
+<span class="nc" id="L659">        saveRooms();</span>
+
+<span class="nc" id="L661">        return true;</span>
+    }
+
+    public boolean updateRoomState(
+            String roomID,
+            String state) {
+
+<span class="fc" id="L668">        Room room = getRoom(roomID);</span>
+
+<span class="pc bpc" id="L670" title="1 of 4 branches missed.">        if (room == null || state == null) {</span>
+<span class="fc" id="L671">            return false;</span>
+        }
+
+<span class="pc bpc" id="L674" title="2 of 4 branches missed.">        switch (state.trim().toLowerCase()) {</span>
+        case &quot;available&quot;:
+<span class="fc" id="L676">            room.setState(new AvailableState());</span>
+<span class="fc" id="L677">            break;</span>
+
+        case &quot;occupied&quot;:
+<span class="nc" id="L680">            room.setState(new OccupiedState());</span>
+<span class="nc" id="L681">            break;</span>
+
+        case &quot;maintenance&quot;:
+<span class="fc" id="L684">            room.setState(new MaintenanceState());</span>
+<span class="fc" id="L685">            break;</span>
+
+        default:
+<span class="nc" id="L688">            return false;</span>
+        }
+
+<span class="fc" id="L691">        saveRooms();</span>
+<span class="fc" id="L692">        return true;</span>
+    }
+
+    public boolean cancelBookingByID(String bookingID) {
+<span class="nc bnc" id="L696" title="All 4 branches missed.">        if (bookingID == null || bookingID.isBlank()) {</span>
+<span class="nc" id="L697">            return false;</span>
+        }
+
+<span class="nc bnc" id="L700" title="All 2 branches missed.">        for (Booking booking : activeBookings) {</span>
+<span class="nc" id="L701">            if (bookingID.equalsIgnoreCase(</span>
+<span class="nc bnc" id="L702" title="All 2 branches missed.">                        booking.getBookingID())</span>
+<span class="nc bnc" id="L703" title="All 2 branches missed.">                    &amp;&amp; !booking.isCancelled()) {</span>
+
+<span class="nc bnc" id="L705" title="All 2 branches missed.">                if (booking.isCheckedIn()) {</span>
+<span class="nc" id="L706">                    booking.getRoom().release();</span>
+<span class="nc" id="L707">                    saveRooms();</span>
+                }
+
+<span class="nc" id="L710">                booking.cancel();</span>
+<span class="nc" id="L711">                saveBookings();</span>
+
+<span class="nc" id="L713">                return true;</span>
+            }
+        }
+
+<span class="nc" id="L717">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegistrationPanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">York Conference Scheduler</a> &gt; <a href="index.source.html" class="el_package">scheduler.gui</a> &gt; <span class="el_source">RegistrationPanel.java</span></div><h1>RegistrationPanel.java</h1><pre class="source lang-java linenums">package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+
+public class RegistrationPanel extends JPanel {
+
+	private static final long serialVersionUID = 1L;
+
+<span class="nc" id="L22">	public RegistrationPanel(MainUI mainUI) {</span>
+<span class="nc" id="L23">		setLayout(new BorderLayout());</span>
+<span class="nc" id="L24">		setBorder(BorderFactory.createEmptyBorder(30, 80, 30, 80));</span>
+
+<span class="nc" id="L26">		JLabel titleLabel = new JLabel(&quot;Create Account&quot;, JLabel.CENTER);</span>
+<span class="nc" id="L27">		titleLabel.setFont(titleLabel.getFont().deriveFont(24f));</span>
+<span class="nc" id="L28">		add(titleLabel, BorderLayout.NORTH);</span>
+
+<span class="nc" id="L30">		JPanel formPanel = new JPanel(new GridBagLayout());</span>
+<span class="nc" id="L31">		formPanel.setBorder(BorderFactory.createTitledBorder(&quot;Account Information&quot;));</span>
+
+<span class="nc" id="L33">		GridBagConstraints constraints = new GridBagConstraints();</span>
+<span class="nc" id="L34">		constraints.insets = new Insets(8, 8, 8, 8);</span>
+<span class="nc" id="L35">		constraints.fill = GridBagConstraints.HORIZONTAL;</span>
+
+<span class="nc" id="L37">		JTextField userIdField = new JTextField(22);</span>
+<span class="nc" id="L38">		JTextField emailField = new JTextField(22);</span>
+<span class="nc" id="L39">		JTextField organizationIdField = new JTextField(22);</span>
+<span class="nc" id="L40">		JPasswordField passwordField = new JPasswordField(22);</span>
+<span class="nc" id="L41">		JPasswordField confirmPasswordField = new JPasswordField(22);</span>
+<span class="nc" id="L42">		JComboBox&lt;String&gt; accountTypeBox = new JComboBox&lt;&gt;(new String[] { &quot;Student&quot;, &quot;Faculty&quot;, &quot;Staff&quot;, &quot;Partner&quot; });</span>
+
+<span class="nc" id="L44">		addRow(formPanel, constraints, 0, &quot;User ID:&quot;, userIdField);</span>
+<span class="nc" id="L45">		addRow(formPanel, constraints, 1, &quot;Email:&quot;, emailField);</span>
+<span class="nc" id="L46">		addRow(formPanel, constraints, 2, &quot;Organization ID:&quot;, organizationIdField);</span>
+<span class="nc" id="L47">		addRow(formPanel, constraints, 3, &quot;Account Type:&quot;, accountTypeBox);</span>
+<span class="nc" id="L48">		addRow(formPanel, constraints, 4, &quot;Password:&quot;, passwordField);</span>
+<span class="nc" id="L49">		addRow(formPanel, constraints, 5, &quot;Confirm Password:&quot;, confirmPasswordField);</span>
+
+<span class="nc" id="L51">		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));</span>
+<span class="nc" id="L52">		JButton createButton = new JButton(&quot;Register&quot;);</span>
+<span class="nc" id="L53">		JButton backButton = new JButton(&quot;Back&quot;);</span>
+
+<span class="nc" id="L55">		createButton.addActionListener(event -&gt; {</span>
+
+			try {
+
+<span class="nc" id="L59">				String userID = userIdField.getText().trim();</span>
+<span class="nc" id="L60">				String email = emailField.getText().trim();</span>
+<span class="nc" id="L61">				String organizationID = organizationIdField.getText().trim();</span>
+
+<span class="nc" id="L63">				String password = new String(passwordField.getPassword());</span>
+<span class="nc" id="L64">				String confirmPassword = new String(confirmPasswordField.getPassword());</span>
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">				if (!password.equals(confirmPassword)) {</span>
+<span class="nc" id="L67">					throw new IllegalArgumentException(&quot;Passwords do not match.&quot;);</span>
+				}
+
+<span class="nc" id="L70">				java.util.Map&lt;String, Object&gt; details = new java.util.HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L72">				details.put(&quot;userID&quot;, userID);</span>
+<span class="nc" id="L73">				details.put(&quot;email&quot;, email);</span>
+<span class="nc" id="L74">				details.put(&quot;password&quot;, password);</span>
+<span class="nc" id="L75">				details.put(&quot;orgID&quot;, organizationID);</span>
+
+<span class="nc" id="L77">				scheduler.user.UserFactory factory = new scheduler.user.UserFactory();</span>
+
+<span class="nc" id="L79">				factory.createUser(accountTypeBox.getSelectedItem().toString(), details);</span>
+
+<span class="nc" id="L81">				JOptionPane.showMessageDialog(this, &quot;Account created successfully!&quot;, &quot;Registration&quot;,</span>
+<span class="nc" id="L82">						JOptionPane.INFORMATION_MESSAGE);</span>
+
+<span class="nc" id="L84">				mainUI.showPanel(MainUI.LOGIN);</span>
+
+<span class="nc" id="L86">			} catch (IllegalArgumentException ex) {</span>
+
+<span class="nc" id="L88">				JOptionPane.showMessageDialog(this, ex.getMessage(), &quot;Registration Error&quot;, JOptionPane.ERROR_MESSAGE);</span>
+			}
+<span class="nc" id="L90">		});</span>
+
+<span class="nc" id="L92">		backButton.addActionListener(event -&gt; mainUI.showPanel(MainUI.LOGIN));</span>
+
+<span class="nc" id="L94">		buttonPanel.add(createButton);</span>
+<span class="nc" id="L95">		buttonPanel.add(backButton);</span>
+
+<span class="nc" id="L97">		constraints.gridx = 0;</span>
+<span class="nc" id="L98">		constraints.gridy = 6;</span>
+<span class="nc" id="L99">		constraints.gridwidth = 2;</span>
+<span class="nc" id="L100">		formPanel.add(buttonPanel, constraints);</span>
+
+<span class="nc" id="L102">		add(formPanel, BorderLayout.CENTER);</span>
+<span class="nc" id="L103">	}</span>
+
+	private void addRow(JPanel panel, GridBagConstraints constraints, int row, String label,
+			java.awt.Component component) {
+
+<span class="nc" id="L108">		constraints.gridx = 0;</span>
+<span class="nc" id="L109">		constraints.gridy = row;</span>
+<span class="nc" id="L110">		constraints.gridwidth = 1;</span>
+<span class="nc" id="L111">		constraints.weightx = 0;</span>
+<span class="nc" id="L112">		panel.add(new JLabel(label), constraints);</span>
+
+<span class="nc" id="L114">		constraints.gridx = 1;</span>
+<span class="nc" id="L115">		constraints.weightx = 1;</span>
+<span class="nc" id="L116">		panel.add(component, constraints);</span>
+<span class="nc" id="L117">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

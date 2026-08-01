@@ -1,10 +1,11 @@
+scheduler\dev\Req10PaymentMethodsTest.class
+scheduler\randoop\ErrorTest0.class
+scheduler\dev\Req08IdentificationAndBookingChangesTest.class
+scheduler\dev\Req07RoomInformationTest.class
+scheduler\dev\Req05SensorTest.class
 scheduler\randoop\RegressionTest.class
 scheduler\randoop\RegressionTest0.class
-scheduler\aigen\SensorStrategyUserTest.class
-scheduler\aigen\RoomAndStateTest.class
-scheduler\randoop\ErrorTest0.class
+scheduler\dev\Req09BookingExtensionTest.class
 scheduler\randoop\ErrorTest.class
-scheduler\dev\BookingTest.class
 scheduler\randoop\RegressionTest1.class
-scheduler\aigen\CsvDatabaseTest.class
-scheduler\aigen\BookingTest.class
+scheduler\dev\Req06RoomAdministrationTest.class
