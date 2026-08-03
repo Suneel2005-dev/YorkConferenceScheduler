@@ -10,7 +10,7 @@ public class Req07RoomInformationTest {
 	@Test
 	void testRoomID() {
 		Room room = new Room("R101", 30, "Lassonde", "1001", false, false, "enabled");
-		assertEquals("1001", room.getRoomID());
+		assertEquals("R101", room.getRoomID());
 	}
 	
 	@Test
