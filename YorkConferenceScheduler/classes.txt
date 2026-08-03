@@ -1,3 +1,4 @@
+scheduler.app.Main
 scheduler.booking.Booking
 scheduler.booking.BookingManager
 scheduler.booking.BookingSystemFacade
