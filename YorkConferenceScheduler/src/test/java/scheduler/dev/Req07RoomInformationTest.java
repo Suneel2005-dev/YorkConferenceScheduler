@@ -8,31 +8,31 @@ import scheduler.room.*;
 public class Req07RoomInformationTest {
 	
 	@Test
-	void testRoomID() {
+	public void testRoomID() {
 		Room room = new Room("R101", 30, "Lassonde", "1001", false, false, "enabled");
 		assertEquals("R101", room.getRoomID());
 	}
 	
 	@Test
-	void testCapacity() {
+	public void testCapacity() {
 		Room room = new Room("R101", 30, "Lassonde", "1001", false, false, "enabled");
 		assertEquals(30, room.getCapacity());
 	}
 	
 	@Test
-	void testRoomBuilding() {
+	public void testRoomBuilding() {
 		Room room = new Room("R101", 30, "Lassonde", "1001", false, false, "enabled");
 		assertEquals("Lassonde", room.getBuilding());
 	}
 	
 	@Test
-	void testRoomNumber() {
+	public void testRoomNumber() {
 		Room room = new Room("R101", 30, "Lassonde", "1001", false, false, "enabled");
 		assertEquals("1001", room.getRoomNumber());
 	}
 	
 	@Test
-	void testRoomLocation() {
+	public void testRoomLocation() {
 		Room room = new Room("R101", 30, "Lassonde", "1001", false, false, "enabled");
 		assertEquals("Lassonde 1001", room.getLocation());
 	}
