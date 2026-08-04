@@ -55,4 +55,11 @@ public class Req07RoomInformationTest {
 		assertThrows(IllegalArgumentException.class, () -> new Room("R101", 30, null));
 		assertThrows(IllegalArgumentException.class, () -> new Room("R101", 30, "Lassonde"));
 	}
+
+	@Test
+	public void testNullRoomNumberAndDefaultStatus() {
+		Room room = new Room("R101", 30, "Lassonde", null, false, false, null);
+		assertEquals("", room.getRoomNumber());
+		assertEquals("enabled", room.getStatus());
+	}
 }
