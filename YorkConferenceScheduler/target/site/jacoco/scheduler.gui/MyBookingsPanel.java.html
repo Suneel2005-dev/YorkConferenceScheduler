@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MyBookingsPanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">York Conference Scheduler</a> &gt; <a href="index.source.html" class="el_package">scheduler.gui</a> &gt; <span class="el_source">MyBookingsPanel.java</span></div><h1>MyBookingsPanel.java</h1><pre class="source lang-java linenums">package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.time.format.DateTimeFormatter;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+
+import scheduler.booking.Booking;
+import scheduler.booking.BookingSystemFacade;
+
+public class MyBookingsPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+<span class="fc" id="L25">    private static final DateTimeFormatter DATE_FORMAT =</span>
+<span class="fc" id="L26">            DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd&quot;);</span>
+
+<span class="fc" id="L28">    private static final DateTimeFormatter TIME_FORMAT =</span>
+<span class="fc" id="L29">            DateTimeFormatter.ofPattern(&quot;HH:mm&quot;);</span>
+
+    private final MainUI mainUI;
+    private final BookingSystemFacade facade;
+    private final DefaultTableModel tableModel;
+    private final JTable bookingTable;
+
+    private boolean administratorMode;
+
+<span class="fc" id="L38">    public MyBookingsPanel(MainUI mainUI) {</span>
+<span class="fc" id="L39">        this.mainUI = mainUI;</span>
+<span class="fc" id="L40">        facade = BookingSystemFacade.getInstance();</span>
+
+<span class="fc" id="L42">        setLayout(new BorderLayout(15, 15));</span>
+<span class="fc" id="L43">        setBorder(</span>
+<span class="fc" id="L44">                BorderFactory.createEmptyBorder(</span>
+                        20, 20, 20, 20));
+
+<span class="fc" id="L47">        JLabel titleLabel =</span>
+                new JLabel(&quot;Bookings&quot;, JLabel.CENTER);
+
+<span class="fc" id="L50">        titleLabel.setFont(</span>
+<span class="fc" id="L51">                titleLabel.getFont().deriveFont(24f));</span>
+
+<span class="fc" id="L53">        add(titleLabel, BorderLayout.NORTH);</span>
+
+<span class="fc" id="L55">        tableModel = new DefaultTableModel(</span>
+                new Object[] {
+                        &quot;Booking ID&quot;,
+                        &quot;User ID&quot;,
+                        &quot;Room&quot;,
+                        &quot;Date&quot;,
+                        &quot;Start&quot;,
+                        &quot;End&quot;,
+                        &quot;Checked In&quot;,
+                        &quot;Status&quot;
+                },
+<span class="fc" id="L66">                0) {</span>
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isCellEditable(
+                    int row,
+                    int column) {
+
+<span class="nc" id="L75">                return false;</span>
+            }
+        };
+
+<span class="fc" id="L79">        bookingTable = new JTable(tableModel);</span>
+<span class="fc" id="L80">        bookingTable.setFillsViewportHeight(true);</span>
+
+<span class="fc" id="L82">        add(</span>
+                new JScrollPane(bookingTable),
+                BorderLayout.CENTER);
+
+<span class="fc" id="L86">        JPanel buttonPanel =</span>
+                new JPanel(
+                        new FlowLayout(
+                                FlowLayout.CENTER,
+                                10,
+                                5));
+
+<span class="fc" id="L93">        JButton cancelButton =</span>
+                new JButton(&quot;Cancel Booking&quot;);
+
+<span class="fc" id="L96">        JButton refreshButton =</span>
+                new JButton(&quot;Refresh&quot;);
+
+<span class="fc" id="L99">        JButton backButton =</span>
+                new JButton(&quot;Back&quot;);
+
+<span class="fc" id="L102">        cancelButton.addActionListener(event -&gt; {</span>
+<span class="nc" id="L103">            int selectedRow =</span>
+<span class="nc" id="L104">                    bookingTable.getSelectedRow();</span>
+
+<span class="nc bnc" id="L106" title="All 2 branches missed.">            if (selectedRow &lt; 0) {</span>
+<span class="nc" id="L107">                showError(&quot;Select a booking first.&quot;);</span>
+<span class="nc" id="L108">                return;</span>
+            }
+
+<span class="nc" id="L111">            String bookingID =</span>
+<span class="nc" id="L112">                    tableModel.getValueAt(</span>
+                            selectedRow,
+<span class="nc" id="L114">                            0).toString();</span>
+
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            if (!facade.cancelBookingByID(bookingID)) {</span>
+<span class="nc" id="L117">                showError(</span>
+                        &quot;The booking could not be cancelled.&quot;);
+<span class="nc" id="L119">                return;</span>
+            }
+
+<span class="nc" id="L122">            loadBookings();</span>
+<span class="nc" id="L123">        });</span>
+
+<span class="fc" id="L125">        refreshButton.addActionListener(</span>
+<span class="nc" id="L126">                event -&gt; loadBookings());</span>
+
+<span class="fc" id="L128">        backButton.addActionListener(event -&gt; {</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (administratorMode) {</span>
+<span class="nc" id="L130">                mainUI.showPanel(</span>
+                        MainUI.ADMIN_DASHBOARD);
+            } else {
+<span class="nc" id="L133">                mainUI.showPanel(</span>
+                        MainUI.USER_DASHBOARD);
+            }
+<span class="nc" id="L136">        });</span>
+
+<span class="fc" id="L138">        buttonPanel.add(cancelButton);</span>
+<span class="fc" id="L139">        buttonPanel.add(refreshButton);</span>
+<span class="fc" id="L140">        buttonPanel.add(backButton);</span>
+
+<span class="fc" id="L142">        add(buttonPanel, BorderLayout.SOUTH);</span>
+
+<span class="fc" id="L144">        addComponentListener(</span>
+<span class="fc" id="L145">                new ComponentAdapter() {</span>
+                    @Override
+                    public void componentShown(
+                            ComponentEvent event) {
+
+<span class="nc" id="L150">                        loadBookings();</span>
+<span class="nc" id="L151">                    }</span>
+                });
+<span class="fc" id="L153">    }</span>
+
+    public void setAdministratorMode(
+            boolean administratorMode) {
+
+<span class="nc" id="L158">        this.administratorMode =</span>
+                administratorMode;
+
+<span class="nc" id="L161">        loadBookings();</span>
+<span class="nc" id="L162">    }</span>
+
+    private void loadBookings() {
+<span class="nc" id="L165">        tableModel.setRowCount(0);</span>
+
+        for (Booking booking
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                : facade.getBookings()) {</span>
+
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            if (!administratorMode</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                    &amp;&amp; mainUI.getCurrentUser() != null</span>
+<span class="nc" id="L172">                    &amp;&amp; !booking.getUser()</span>
+<span class="nc" id="L173">                            .getUserID()</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                            .equalsIgnoreCase(</span>
+                                    mainUI
+<span class="nc" id="L176">                                            .getCurrentUser()</span>
+<span class="nc" id="L177">                                            .getUserID())) {</span>
+
+<span class="nc" id="L179">                continue;</span>
+            }
+
+            String status;
+
+<span class="nc bnc" id="L184" title="All 2 branches missed.">            if (booking.isCancelled()) {</span>
+<span class="nc" id="L185">                status = &quot;Cancelled&quot;;</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">            } else if (booking.isDepositForfeited()) {</span>
+<span class="nc" id="L187">                status = &quot;Deposit Forfeited&quot;;</span>
+            } else {
+<span class="nc" id="L189">                status = &quot;Confirmed&quot;;</span>
+            }
+
+<span class="nc" id="L192">            tableModel.addRow(new Object[] {</span>
+<span class="nc" id="L193">                    booking.getBookingID(),</span>
+<span class="nc" id="L194">                    booking.getUser().getUserID(),</span>
+<span class="nc" id="L195">                    booking.getRoom().getRoomID(),</span>
+<span class="nc" id="L196">                    booking.getStartTime()</span>
+<span class="nc" id="L197">                            .format(DATE_FORMAT),</span>
+<span class="nc" id="L198">                    booking.getStartTime()</span>
+<span class="nc" id="L199">                            .format(TIME_FORMAT),</span>
+<span class="nc" id="L200">                    booking.getEndTime()</span>
+<span class="nc" id="L201">                            .format(TIME_FORMAT),</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">                    booking.isCheckedIn()</span>
+<span class="nc" id="L203">                            ? &quot;Yes&quot;</span>
+<span class="nc" id="L204">                            : &quot;No&quot;,</span>
+                    status
+            });
+<span class="nc" id="L207">        }</span>
+<span class="nc" id="L208">    }</span>
+
+    private void showError(String message) {
+<span class="nc" id="L211">        JOptionPane.showMessageDialog(</span>
+                this,
+                message,
+                &quot;Booking Error&quot;,
+                JOptionPane.ERROR_MESSAGE);
+<span class="nc" id="L216">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

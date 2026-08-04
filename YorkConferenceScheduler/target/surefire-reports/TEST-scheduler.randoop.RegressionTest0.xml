@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="scheduler.randoop.RegressionTest0" time="0.209" tests="267" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="22"/>
+    <property name="sun.cpu.isalist" value="amd64"/>
+    <property name="sun.jnu.encoding" value="Cp1252"/>
+    <property name="java.class.path" value="C:\Users\ethan\Documents\Documents\YorkU\2026 Summer\EECS 3311\York_Conference_Scheduler\YorkConferenceScheduler\YorkConferenceScheduler\target\test-classes;C:\Users\ethan\Documents\Documents\YorkU\2026 Summer\EECS 3311\York_Conference_Scheduler\YorkConferenceScheduler\YorkConferenceScheduler\target\classes;C:\Users\ethan\.m2\repository\junit\junit\4.13.2\junit-4.13.2.jar;C:\Users\ethan\.m2\repository\org\hamcrest\hamcrest-core\1.3\hamcrest-core-1.3.jar;"/>
+    <property name="sun.awt.enableExtraMouseButtons" value="true"/>
+    <property name="java.vm.vendor" value="Oracle Corporation"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="user.variant" value=""/>
+    <property name="java.vendor.url" value="https://java.oracle.com/"/>
+    <property name="user.timezone" value="America/New_York"/>
+    <property name="os.name" value="Windows 11"/>
+    <property name="java.vm.specification.version" value="22"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="user.country" value="US"/>
+    <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk-22\bin"/>
+    <property name="sun.java.command" value="C:\Users\ethan\AppData\Local\Temp\surefire5394081624988454846\surefirebooter-20260804012122787_3.jar C:\Users\ethan\AppData\Local\Temp\surefire5394081624988454846 2026-08-04T01-21-22_567-jvmRun1 surefire-20260804012122787_1tmp surefire_0-20260804012122787_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="test" value="Regression*"/>
+    <property name="surefire.test.class.path" value="C:\Users\ethan\Documents\Documents\YorkU\2026 Summer\EECS 3311\York_Conference_Scheduler\YorkConferenceScheduler\YorkConferenceScheduler\target\test-classes;C:\Users\ethan\Documents\Documents\YorkU\2026 Summer\EECS 3311\York_Conference_Scheduler\YorkConferenceScheduler\YorkConferenceScheduler\target\classes;C:\Users\ethan\.m2\repository\junit\junit\4.13.2\junit-4.13.2.jar;C:\Users\ethan\.m2\repository\org\hamcrest\hamcrest-core\1.3\hamcrest-core-1.3.jar;"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="C:\Users\ethan"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2024-07-16"/>
+    <property name="java.home" value="C:\Program Files\Java\jdk-22"/>
+    <property name="file.separator" value="\"/>
+    <property name="basedir" value="C:\Users\ethan\Documents\Documents\YorkU\2026 Summer\EECS 3311\York_Conference_Scheduler\YorkConferenceScheduler\YorkConferenceScheduler"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="surefire.real.class.path" value="C:\Users\ethan\AppData\Local\Temp\surefire5394081624988454846\surefirebooter-20260804012122787_3.jar"/>
+    <property name="user.script" value=""/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="22.0.2+9-70"/>
+    <property name="user.name" value="ethan"/>
+    <property name="stdout.encoding" value="Cp1252"/>
+    <property name="path.separator" value=";"/>
+    <property name="os.version" value="10.0"/>
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM"/>
+    <property name="localRepository" value="C:\Users\ethan\.m2\repository"/>
+    <property name="java.vendor.url.bug" value="https://bugreport.java.com/bugreport/"/>
+    <property name="java.io.tmpdir" value="C:\Users\ethan\AppData\Local\Temp\"/>
+    <property name="java.version" value="22.0.2"/>
+    <property name="user.dir" value="C:\Users\ethan\Documents\Documents\YorkU\2026 Summer\EECS 3311\York_Conference_Scheduler\YorkConferenceScheduler\YorkConferenceScheduler"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="sun.os.patch.level" value=""/>
+    <property name="native.encoding" value="Cp1252"/>
+    <property name="java.library.path" value="C:\Program Files\Java\jdk-22\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;c:\Users\ethan\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\debugCommand;c:\Users\ethan\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\copilotCli;C:\Python312\Scripts\;C:\Python312\;C:\Users\ethan\AppData\Roaming\Python\Python312\Scripts;c:\users\ethan\appdata\roaming\python\python312\site-packages;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files\dotnet\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\mingw64\bin;C:\Program Files\Git\cmd;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Users\ethan\AppData\Roaming\nvm;C:\Program Files\nodejs;C:\ProgramData\chocolatey\bin;C:\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR;C:\Users\ethan\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts;C:\Program Files\Calibre2\;C:\Program Files\swipl\bin;C:\Users\ethan\AppData\Local\Programs\Python\Python313\python.exe;C:\Users\ethan\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts;C:\Users\ethan\AppData\Local\Microsoft\WindowsApps;C:\Users\ethan\.dotnet\tools;C:\Users\ethan\AppData\Local\GitHubDesktop\bin;C:\Users\ethan\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\ethan\AppData\Local\Microsoft\WinGet\Packages\Schniz.fnm_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\Users\ethan\AppData\Roaming\nvm;C:\Program Files\nodejs;C:\Users\ethan\.lmstudio\bin;C:\Program Files\Apache\Maven\apache-maven-3.9.16\bin;c:\Users\ethan\.vscode\extensions\vscjava.vscode-java-debug-0.59.0\bundled\scripts\noConfigScripts;c:\Users\ethan\.vscode\extensions\ms-python.debugpy-2025.18.0-win32-x64\bundled\scripts\noConfigScripts;."/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="stderr.encoding" value="Cp1252"/>
+    <property name="java.vendor" value="Oracle Corporation"/>
+    <property name="java.vm.version" value="22.0.2+9-70"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="66.0"/>
+  </properties>
+  <testcase name="test001" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test002" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test003" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test004" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test005" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test006" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test007" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test008" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test009" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test010" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test011" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test012" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test013" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test014" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test015" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test016" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test017" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test018" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test019" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test020" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test021" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test022" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test023" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test024" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test025" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test026" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test027" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test028" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test029" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test030" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test031" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test032" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test033" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test034" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test035" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test036" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test037" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test038" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test039" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test040" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test041" classname="scheduler.randoop.RegressionTest0" time="0.002">
+    <system-out><![CDATA[Processing institutional billing for: $0.0
+]]></system-out>
+  </testcase>
+  <testcase name="test042" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test043" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test044" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test045" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test046" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test047" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test048" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test049" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test050" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test051" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test052" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test053" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test054" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test055" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test056" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test057" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test058" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test059" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test060" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test061" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test062" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test063" classname="scheduler.randoop.RegressionTest0" time="0.002">
+    <system-out><![CDATA[Room PAYMENT cannot be reserved because it is occupied.
+]]></system-out>
+  </testcase>
+  <testcase name="test064" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test065" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test066" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test067" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test068" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test069" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test070" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test071" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test072" classname="scheduler.randoop.RegressionTest0" time="0.002">
+    <system-out><![CDATA[Processing institutional billing for: $100.0
+]]></system-out>
+  </testcase>
+  <testcase name="test073" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test074" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test075" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test076" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test077" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test078" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test079" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test080" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test081" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test082" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test083" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test084" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test085" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test086" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test087" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test088" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test089" classname="scheduler.randoop.RegressionTest0" time="0.002">
+    <system-out><![CDATA[Room PAYMENT cannot be reserved because it is occupied.
+Room PAYMENT cannot be released because it is under maintenance.
+]]></system-out>
+  </testcase>
+  <testcase name="test090" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test091" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test092" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test093" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test094" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test095" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test096" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test097" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test098" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test099" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test100" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test101" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test102" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test103" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test104" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test105" classname="scheduler.randoop.RegressionTest0" time="0.003"/>
+  <testcase name="test106" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test107" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test108" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test109" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test110" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test111" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test112" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test113" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test114" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test115" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test116" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test117" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test118" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test119" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test120" classname="scheduler.randoop.RegressionTest0" time="0.003"/>
+  <testcase name="test121" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test122" classname="scheduler.randoop.RegressionTest0" time="0.004">
+    <system-out><![CDATA[Room PAYMENT cannot be reserved because it is occupied.
+Room PAYMENT cannot be reserved because it is under maintenance.
+]]></system-out>
+  </testcase>
+  <testcase name="test123" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test124" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test125" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test126" classname="scheduler.randoop.RegressionTest0" time="0.006"/>
+  <testcase name="test127" classname="scheduler.randoop.RegressionTest0" time="0.003"/>
+  <testcase name="test128" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test129" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test130" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test131" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test132" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test133" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test134" classname="scheduler.randoop.RegressionTest0" time="0.004"/>
+  <testcase name="test135" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test136" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test137" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test138" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test139" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test140" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test141" classname="scheduler.randoop.RegressionTest0" time="0.003"/>
+  <testcase name="test142" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test143" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test144" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test145" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test146" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test147" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test148" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test149" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test150" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test151" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test152" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test153" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test154" classname="scheduler.randoop.RegressionTest0" time="0.003"/>
+  <testcase name="test155" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test156" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test157" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test158" classname="scheduler.randoop.RegressionTest0" time="0.001">
+    <system-out><![CDATA[Processing debit billing for: $-1.0
+]]></system-out>
+  </testcase>
+  <testcase name="test159" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test160" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test161" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test162" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test163" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test164" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test165" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test166" classname="scheduler.randoop.RegressionTest0" time="0.003"/>
+  <testcase name="test167" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test168" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test169" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test170" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test171" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test172" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test173" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test174" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test175" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test176" classname="scheduler.randoop.RegressionTest0" time="0.003"/>
+  <testcase name="test177" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test178" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test179" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test180" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test181" classname="scheduler.randoop.RegressionTest0" time="0.003"/>
+  <testcase name="test182" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test183" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test184" classname="scheduler.randoop.RegressionTest0" time="0.004"/>
+  <testcase name="test185" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test186" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test187" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test188" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test189" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test190" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test191" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test192" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test193" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test194" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test195" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test196" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test197" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test198" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test199" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test200" classname="scheduler.randoop.RegressionTest0" time="0.002">
+    <system-out><![CDATA[Room PAYMENT cannot be reserved because it is occupied.
+]]></system-out>
+  </testcase>
+  <testcase name="test201" classname="scheduler.randoop.RegressionTest0" time="0.002">
+    <system-out><![CDATA[Room PAYMENT cannot be reserved because it is occupied.
+Room PAYMENT cannot be reserved because it is occupied.
+]]></system-out>
+  </testcase>
+  <testcase name="test202" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test203" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test204" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test205" classname="scheduler.randoop.RegressionTest0" time="0.002">
+    <system-out><![CDATA[Room PAYMENT cannot be reserved because it is occupied.
+Room PAYMENT cannot be reserved because it is occupied.
+Room PAYMENT cannot be reserved because it is occupied.
+]]></system-out>
+  </testcase>
+  <testcase name="test206" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test207" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test208" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test209" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test210" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test211" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test212" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test213" classname="scheduler.randoop.RegressionTest0" time="0.001">
+    <system-out><![CDATA[Room PAYMENT cannot be reserved because it is occupied.
+Room PAYMENT cannot be reserved because it is occupied.
+]]></system-out>
+  </testcase>
+  <testcase name="test214" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test215" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test216" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test217" classname="scheduler.randoop.RegressionTest0" time="0.007"/>
+  <testcase name="test218" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test219" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test220" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test221" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test222" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test223" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test224" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test225" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test226" classname="scheduler.randoop.RegressionTest0" time="0.003"/>
+  <testcase name="test227" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test228" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test229" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test230" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test231" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test232" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test233" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test234" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test235" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test236" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test237" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test238" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test239" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test240" classname="scheduler.randoop.RegressionTest0" time="0.004"/>
+  <testcase name="test241" classname="scheduler.randoop.RegressionTest0" time="0.006"/>
+  <testcase name="test242" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test243" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test244" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test245" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test246" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test247" classname="scheduler.randoop.RegressionTest0" time="0.004"/>
+  <testcase name="test248" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test249" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test250" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test251" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test252" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test253" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test254" classname="scheduler.randoop.RegressionTest0" time="0.001">
+    <system-out><![CDATA[Processing credit billing for: $0.0
+]]></system-out>
+  </testcase>
+  <testcase name="test255" classname="scheduler.randoop.RegressionTest0" time="0.002">
+    <system-out><![CDATA[Room PAYMENT cannot be reserved because it is occupied.
+Room PAYMENT cannot be reserved because it is under maintenance.
+]]></system-out>
+  </testcase>
+  <testcase name="test256" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test257" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test258" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test259" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test260" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test261" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test262" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+  <testcase name="test263" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test264" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test265" classname="scheduler.randoop.RegressionTest0" time="0.001"/>
+  <testcase name="test266" classname="scheduler.randoop.RegressionTest0" time="0.0"/>
+  <testcase name="test267" classname="scheduler.randoop.RegressionTest0" time="0.002"/>
+</testsuite>

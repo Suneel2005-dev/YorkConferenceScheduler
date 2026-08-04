@@ -1,0 +1,43 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+York Conference Scheduler,scheduler.app,Main,14,0,0,0,6,0,3,0,3,0
+York Conference Scheduler,scheduler.sensor,HardwareSensor,80,27,14,2,21,10,13,5,5,5
+York Conference Scheduler,scheduler.database,CsvDatabase,39,101,3,5,10,22,3,6,1,4
+York Conference Scheduler,scheduler.gui,SensorPanel.new DefaultTableModel() {...},10,0,0,0,2,0,2,0,2,0
+York Conference Scheduler,scheduler.gui,MyBookingsPanel.new ComponentAdapter() {...},4,6,0,0,2,1,1,1,1,1
+York Conference Scheduler,scheduler.gui,MyBookingsPanel.new DefaultTableModel() {...},2,8,0,0,1,1,1,1,1,1
+York Conference Scheduler,scheduler.gui,RegistrationPanel,89,237,2,0,20,45,3,2,2,2
+York Conference Scheduler,scheduler.gui,MainUI,182,0,0,0,45,0,9,0,9,0
+York Conference Scheduler,scheduler.gui,SensorPanel,260,0,12,0,61,0,11,0,5,0
+York Conference Scheduler,scheduler.gui,LoginPanel,374,0,20,0,87,0,14,0,4,0
+York Conference Scheduler,scheduler.gui,UserDashboardPanel,14,101,0,0,4,21,4,1,4,1
+York Conference Scheduler,scheduler.gui,SensorPanel.new ComponentAdapter() {...},10,0,0,0,3,0,2,0,2,0
+York Conference Scheduler,scheduler.gui,RoomBookingPanel,355,0,16,0,104,0,14,0,6,0
+York Conference Scheduler,scheduler.gui,AdminDashboardPanel,115,0,0,0,25,0,5,0,5,0
+York Conference Scheduler,scheduler.gui,RoomManagementPanel.new ComponentAdapter() {...},4,6,0,0,2,1,1,1,1,1
+York Conference Scheduler,scheduler.gui,RoomManagementPanel.new DefaultTableModel() {...},2,8,0,0,1,1,1,1,1,1
+York Conference Scheduler,scheduler.gui,RoomManagementPanel,156,339,12,6,63,63,12,5,6,2
+York Conference Scheduler,scheduler.gui,MyBookingsPanel,160,166,20,0,53,31,16,2,6,2
+York Conference Scheduler,scheduler.gui,PaymentPanel,240,255,31,0,84,56,24,3,7,3
+York Conference Scheduler,scheduler.gui,ChiefCoordinatorDashboardPanel,47,170,0,0,16,40,3,2,3,2
+York Conference Scheduler,scheduler.pricing,StudentPricing,2,3,0,0,1,1,1,1,1,1
+York Conference Scheduler,scheduler.pricing,StaffPricing,2,3,0,0,1,1,1,1,1,1
+York Conference Scheduler,scheduler.pricing,FacultyPricing,5,0,0,0,2,0,2,0,2,0
+York Conference Scheduler,scheduler.pricing,PartnerPricing,0,5,0,0,0,2,0,2,0,2
+York Conference Scheduler,scheduler.user,Student,3,8,0,0,2,2,1,1,1,1
+York Conference Scheduler,scheduler.user,User,9,47,2,2,2,16,4,8,2,8
+York Conference Scheduler,scheduler.user,Faculty,0,11,0,0,0,4,0,2,0,2
+York Conference Scheduler,scheduler.user,Partner,3,8,0,0,2,2,1,1,1,1
+York Conference Scheduler,scheduler.user,Administrator,218,0,38,0,51,0,28,0,9,0
+York Conference Scheduler,scheduler.user,ChiefEventCoordinator,282,0,30,0,59,0,23,0,8,0
+York Conference Scheduler,scheduler.user,Staff,0,11,0,0,0,4,0,2,0,2
+York Conference Scheduler,scheduler.user,UserFactory,269,167,51,16,58,39,38,13,7,9
+York Conference Scheduler,scheduler.room,AvailableState,31,3,4,0,9,1,4,1,2,1
+York Conference Scheduler,scheduler.room,Room,35,140,10,18,6,39,11,18,1,14
+York Conference Scheduler,scheduler.room,MaintenanceState,10,19,2,2,2,7,2,3,0,3
+York Conference Scheduler,scheduler.room,OccupiedState,16,18,2,2,4,6,2,3,0,3
+York Conference Scheduler,scheduler.payment,CreditCardPayment,0,9,0,0,0,3,0,2,0,2
+York Conference Scheduler,scheduler.payment,InstitutionBilling,0,9,0,0,0,3,0,2,0,2
+York Conference Scheduler,scheduler.payment,DebitCardPayment,0,9,0,0,0,3,0,2,0,2
+York Conference Scheduler,scheduler.booking,BookingSystemFacade,195,25,36,2,45,8,33,4,15,3
+York Conference Scheduler,scheduler.booking,BookingManager,1042,172,192,13,298,43,121,12,18,10
+York Conference Scheduler,scheduler.booking,Booking,358,0,60,0,102,0,57,0,27,0

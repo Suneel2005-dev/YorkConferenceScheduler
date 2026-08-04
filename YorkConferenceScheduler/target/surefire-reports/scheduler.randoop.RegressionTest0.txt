@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: scheduler.randoop.RegressionTest0
+-------------------------------------------------------------------------------
+Tests run: 267, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.209 s -- in scheduler.randoop.RegressionTest0

@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoomManagementPanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">York Conference Scheduler</a> &gt; <a href="index.source.html" class="el_package">scheduler.gui</a> &gt; <span class="el_source">RoomManagementPanel.java</span></div><h1>RoomManagementPanel.java</h1><pre class="source lang-java linenums">package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+import scheduler.booking.BookingSystemFacade;
+import scheduler.room.Room;
+
+public class RoomManagementPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+    private final BookingSystemFacade facade;
+    private final DefaultTableModel tableModel;
+    private final JTable roomTable;
+
+<span class="fc" id="L30">    public RoomManagementPanel(MainUI mainUI) {</span>
+<span class="fc" id="L31">        facade = BookingSystemFacade.getInstance();</span>
+
+<span class="fc" id="L33">        setLayout(new BorderLayout(15, 15));</span>
+<span class="fc" id="L34">        setBorder(</span>
+<span class="fc" id="L35">                BorderFactory.createEmptyBorder(</span>
+                        20, 20, 20, 20));
+
+<span class="fc" id="L38">        JLabel titleLabel =</span>
+                new JLabel(&quot;Room Management&quot;, JLabel.CENTER);
+
+<span class="fc" id="L41">        titleLabel.setFont(</span>
+<span class="fc" id="L42">                titleLabel.getFont().deriveFont(24f));</span>
+
+<span class="fc" id="L44">        add(titleLabel, BorderLayout.NORTH);</span>
+
+<span class="fc" id="L46">        tableModel = new DefaultTableModel(</span>
+                new Object[] {
+                        &quot;Room ID&quot;,
+                        &quot;Capacity&quot;,
+                        &quot;Building&quot;,
+                        &quot;Room&quot;,
+                        &quot;Occupied&quot;,
+                        &quot;Maintenance&quot;,
+                        &quot;Status&quot;
+                },
+<span class="fc" id="L56">                0) {</span>
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isCellEditable(
+                    int row,
+                    int column) {
+
+<span class="nc" id="L65">                return false;</span>
+            }
+        };
+
+<span class="fc" id="L69">        roomTable = new JTable(tableModel);</span>
+<span class="fc" id="L70">        roomTable.setFillsViewportHeight(true);</span>
+
+<span class="fc" id="L72">        add(</span>
+                new JScrollPane(roomTable),
+                BorderLayout.CENTER);
+
+<span class="fc" id="L76">        JPanel controls =</span>
+                new JPanel(
+                        new FlowLayout(
+                                FlowLayout.CENTER,
+                                10,
+                                5));
+
+<span class="fc" id="L83">        JTextField roomIDField =</span>
+                new JTextField(7);
+
+<span class="fc" id="L86">        JTextField capacityField =</span>
+                new JTextField(5);
+
+<span class="fc" id="L89">        JTextField buildingField =</span>
+                new JTextField(10);
+
+<span class="fc" id="L92">        JTextField roomNumberField =</span>
+                new JTextField(6);
+
+<span class="fc" id="L95">        JComboBox&lt;String&gt; stateBox =</span>
+                new JComboBox&lt;&gt;(
+                        new String[] {
+                                &quot;Available&quot;,
+                                &quot;Occupied&quot;,
+                                &quot;Maintenance&quot;
+                        });
+
+<span class="fc" id="L103">        JButton addButton =</span>
+                new JButton(&quot;Add Room&quot;);
+
+<span class="fc" id="L106">        JButton updateButton =</span>
+                new JButton(&quot;Update State&quot;);
+
+<span class="fc" id="L109">        JButton removeButton =</span>
+                new JButton(&quot;Remove&quot;);
+
+<span class="fc" id="L112">        JButton refreshButton =</span>
+                new JButton(&quot;Refresh&quot;);
+
+<span class="fc" id="L115">        JButton backButton =</span>
+                new JButton(&quot;Back&quot;);
+
+<span class="fc" id="L118">        addButton.addActionListener(event -&gt; {</span>
+            try {
+<span class="nc" id="L120">                String roomID =</span>
+<span class="nc" id="L121">                        roomIDField.getText().trim();</span>
+
+<span class="nc" id="L123">                int capacity = Integer.parseInt(</span>
+<span class="nc" id="L124">                        capacityField.getText().trim());</span>
+
+<span class="nc" id="L126">                String building =</span>
+<span class="nc" id="L127">                        buildingField.getText().trim();</span>
+
+<span class="nc" id="L129">                String roomNumber =</span>
+<span class="nc" id="L130">                        roomNumberField.getText().trim();</span>
+
+<span class="nc" id="L132">                String state =</span>
+<span class="nc" id="L133">                        (String) stateBox.getSelectedItem();</span>
+
+<span class="nc" id="L135">                boolean occupied =</span>
+<span class="nc" id="L136">                        &quot;Occupied&quot;.equals(state);</span>
+
+<span class="nc" id="L138">                boolean maintenance =</span>
+<span class="nc" id="L139">                        &quot;Maintenance&quot;.equals(state);</span>
+
+<span class="nc" id="L141">                Room room = new Room(</span>
+                        roomID,
+                        capacity,
+                        building,
+                        roomNumber,
+                        occupied,
+                        maintenance,
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                        maintenance</span>
+<span class="nc" id="L149">                                ? &quot;disabled&quot;</span>
+<span class="nc" id="L150">                                : &quot;enabled&quot;);</span>
+
+<span class="nc bnc" id="L152" title="All 2 branches missed.">                if (!facade.addRoom(room)) {</span>
+<span class="nc" id="L153">                    throw new IllegalArgumentException(</span>
+                            &quot;A room with this ID already exists.&quot;);
+                }
+
+<span class="nc" id="L157">                loadRooms();</span>
+
+<span class="nc" id="L159">                roomIDField.setText(&quot;&quot;);</span>
+<span class="nc" id="L160">                capacityField.setText(&quot;&quot;);</span>
+<span class="nc" id="L161">                buildingField.setText(&quot;&quot;);</span>
+<span class="nc" id="L162">                roomNumberField.setText(&quot;&quot;);</span>
+
+<span class="nc" id="L164">            } catch (NumberFormatException exception) {</span>
+<span class="nc" id="L165">                showError(</span>
+                        &quot;Capacity must be a whole number.&quot;);
+
+<span class="nc" id="L168">            } catch (IllegalArgumentException</span>
+                    | IllegalStateException exception) {
+
+<span class="nc" id="L171">                showError(exception.getMessage());</span>
+<span class="nc" id="L172">            }</span>
+<span class="nc" id="L173">        });</span>
+
+<span class="fc" id="L175">        updateButton.addActionListener(event -&gt; {</span>
+<span class="nc" id="L176">            int selectedRow =</span>
+<span class="nc" id="L177">                    roomTable.getSelectedRow();</span>
+
+<span class="nc bnc" id="L179" title="All 2 branches missed.">            if (selectedRow &lt; 0) {</span>
+<span class="nc" id="L180">                showError(&quot;Select a room first.&quot;);</span>
+<span class="nc" id="L181">                return;</span>
+            }
+
+<span class="nc" id="L184">            String roomID =</span>
+<span class="nc" id="L185">                    tableModel.getValueAt(</span>
+                            selectedRow,
+<span class="nc" id="L187">                            0).toString();</span>
+
+<span class="nc" id="L189">            String state =</span>
+<span class="nc" id="L190">                    (String) stateBox.getSelectedItem();</span>
+
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            if (!facade.updateRoomState(</span>
+                    roomID,
+                    state)) {
+
+<span class="nc" id="L196">                showError(</span>
+                        &quot;The room state could not be updated.&quot;);
+<span class="nc" id="L198">                return;</span>
+            }
+
+<span class="nc" id="L201">            loadRooms();</span>
+<span class="nc" id="L202">        });</span>
+
+<span class="fc" id="L204">        removeButton.addActionListener(event -&gt; {</span>
+<span class="nc" id="L205">            int selectedRow =</span>
+<span class="nc" id="L206">                    roomTable.getSelectedRow();</span>
+
+<span class="nc bnc" id="L208" title="All 2 branches missed.">            if (selectedRow &lt; 0) {</span>
+<span class="nc" id="L209">                showError(&quot;Select a room first.&quot;);</span>
+<span class="nc" id="L210">                return;</span>
+            }
+
+<span class="nc" id="L213">            String roomID =</span>
+<span class="nc" id="L214">                    tableModel.getValueAt(</span>
+                            selectedRow,
+<span class="nc" id="L216">                            0).toString();</span>
+
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (!facade.removeRoom(roomID)) {</span>
+<span class="nc" id="L219">                showError(</span>
+                        &quot;The room could not be removed. &quot;
+                                + &quot;It may have an active booking.&quot;);
+<span class="nc" id="L222">                return;</span>
+            }
+
+<span class="nc" id="L225">            loadRooms();</span>
+<span class="nc" id="L226">        });</span>
+
+<span class="fc" id="L228">        refreshButton.addActionListener(</span>
+<span class="nc" id="L229">                event -&gt; loadRooms());</span>
+
+<span class="fc" id="L231">        backButton.addActionListener(</span>
+<span class="nc" id="L232">                event -&gt; mainUI.showPanel(</span>
+                        MainUI.ADMIN_DASHBOARD));
+
+<span class="fc" id="L235">        controls.add(new JLabel(&quot;ID:&quot;));</span>
+<span class="fc" id="L236">        controls.add(roomIDField);</span>
+
+<span class="fc" id="L238">        controls.add(new JLabel(&quot;Capacity:&quot;));</span>
+<span class="fc" id="L239">        controls.add(capacityField);</span>
+
+<span class="fc" id="L241">        controls.add(new JLabel(&quot;Building:&quot;));</span>
+<span class="fc" id="L242">        controls.add(buildingField);</span>
+
+<span class="fc" id="L244">        controls.add(new JLabel(&quot;Room:&quot;));</span>
+<span class="fc" id="L245">        controls.add(roomNumberField);</span>
+
+<span class="fc" id="L247">        controls.add(stateBox);</span>
+<span class="fc" id="L248">        controls.add(addButton);</span>
+<span class="fc" id="L249">        controls.add(updateButton);</span>
+<span class="fc" id="L250">        controls.add(removeButton);</span>
+<span class="fc" id="L251">        controls.add(refreshButton);</span>
+<span class="fc" id="L252">        controls.add(backButton);</span>
+
+<span class="fc" id="L254">        add(controls, BorderLayout.SOUTH);</span>
+
+<span class="fc" id="L256">        addComponentListener(</span>
+<span class="fc" id="L257">                new ComponentAdapter() {</span>
+                    @Override
+                    public void componentShown(
+                            ComponentEvent event) {
+
+<span class="nc" id="L262">                        loadRooms();</span>
+<span class="nc" id="L263">                    }</span>
+                });
+
+<span class="fc" id="L266">        loadRooms();</span>
+<span class="fc" id="L267">    }</span>
+
+    private void loadRooms() {
+<span class="fc" id="L270">        tableModel.setRowCount(0);</span>
+
+        for (Room room
+<span class="fc bfc" id="L273" title="All 2 branches covered.">                : facade.getRooms().values()) {</span>
+
+<span class="fc" id="L275">            tableModel.addRow(new Object[] {</span>
+<span class="fc" id="L276">                    room.getRoomID(),</span>
+<span class="fc" id="L277">                    room.getCapacity(),</span>
+<span class="fc" id="L278">                    room.getBuilding(),</span>
+<span class="fc" id="L279">                    room.getRoomNumber(),</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">                    room.isOccupied()</span>
+<span class="fc" id="L281">                            ? &quot;Yes&quot;</span>
+<span class="fc" id="L282">                            : &quot;No&quot;,</span>
+<span class="fc bfc" id="L283" title="All 2 branches covered.">                    room.isMaintenance()</span>
+<span class="fc" id="L284">                            ? &quot;Yes&quot;</span>
+<span class="fc" id="L285">                            : &quot;No&quot;,</span>
+<span class="fc" id="L286">                    room.getStatus()</span>
+            });
+<span class="fc" id="L288">        }</span>
+<span class="fc" id="L289">    }</span>
+
+    private void showError(String message) {
+<span class="nc" id="L292">        JOptionPane.showMessageDialog(</span>
+                this,
+                message,
+                &quot;Room Management Error&quot;,
+                JOptionPane.ERROR_MESSAGE);
+<span class="nc" id="L297">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

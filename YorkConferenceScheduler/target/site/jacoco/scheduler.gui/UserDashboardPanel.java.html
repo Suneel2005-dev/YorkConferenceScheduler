@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserDashboardPanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">York Conference Scheduler</a> &gt; <a href="index.source.html" class="el_package">scheduler.gui</a> &gt; <span class="el_source">UserDashboardPanel.java</span></div><h1>UserDashboardPanel.java</h1><pre class="source lang-java linenums">package scheduler.gui;
+
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+public class UserDashboardPanel extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+<span class="fc" id="L16">    public UserDashboardPanel(MainUI mainUI) {</span>
+<span class="fc" id="L17">        setLayout(new BorderLayout(20, 20));</span>
+<span class="fc" id="L18">        setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));</span>
+
+<span class="fc" id="L20">        JLabel titleLabel = new JLabel(&quot;User Dashboard&quot;, JLabel.CENTER);</span>
+<span class="fc" id="L21">        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 26f));</span>
+<span class="fc" id="L22">        add(titleLabel, BorderLayout.NORTH);</span>
+
+<span class="fc" id="L24">        JPanel actionPanel = new JPanel(new GridLayout(2, 2, 20, 20));</span>
+
+<span class="fc" id="L26">        JButton bookRoomButton = new JButton(&quot;Book a Room&quot;);</span>
+<span class="fc" id="L27">        JButton myBookingsButton = new JButton(&quot;My Bookings&quot;);</span>
+<span class="fc" id="L28">        JButton paymentButton = new JButton(&quot;Payments&quot;);</span>
+<span class="fc" id="L29">        JButton logoutButton = new JButton(&quot;Logout&quot;);</span>
+
+<span class="fc" id="L31">        bookRoomButton.addActionListener(</span>
+<span class="nc" id="L32">                event -&gt; mainUI.showPanel(MainUI.ROOM_BOOKING));</span>
+<span class="fc" id="L33">        myBookingsButton.addActionListener(</span>
+<span class="nc" id="L34">                event -&gt; mainUI.showUserBookings());</span>
+<span class="fc" id="L35">        paymentButton.addActionListener(</span>
+<span class="nc" id="L36">                event -&gt; mainUI.showPanel(MainUI.PAYMENT));</span>
+<span class="fc" id="L37">        logoutButton.addActionListener(</span>
+<span class="nc" id="L38">                event -&gt; mainUI.logout());</span>
+
+<span class="fc" id="L40">        actionPanel.add(bookRoomButton);</span>
+<span class="fc" id="L41">        actionPanel.add(myBookingsButton);</span>
+<span class="fc" id="L42">        actionPanel.add(paymentButton);</span>
+<span class="fc" id="L43">        actionPanel.add(logoutButton);</span>
+
+<span class="fc" id="L45">        add(actionPanel, BorderLayout.CENTER);</span>
+<span class="fc" id="L46">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
