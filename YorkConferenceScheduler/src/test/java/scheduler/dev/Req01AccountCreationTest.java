@@ -2,7 +2,6 @@ package scheduler.dev;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -17,10 +16,6 @@ public class Req01AccountCreationTest {
     @Before
     public void setUp() {
         factory = new UserFactory();
-    }
-
-    private String generateUniqueId() {
-        return "U" + UUID.randomUUID().toString().replaceAll("-", "").substring(0, 8);
     }
 
     private Map<String, Object> createUserData(String userId, String name, String email, String password, String orgId) {
@@ -45,126 +40,108 @@ public class Req01AccountCreationTest {
 
     @Test
     public void validStudentAccountCreationSucceeds() {
-        String uid = generateUniqueId();
-        String email = "student_" + uid + "@example.com";
-        Map<String, Object> userData = createUserData(uid, "New Student", email, "Password_1!", "ORG001");
+        Map<String, Object> userData = createUserData("U005", "New Student", "student5@example.com", "Password_1!", "ORG001");
         User user = factory.createUser("Student", userData);
 
         assertNotNull(user);
-        assertEquals(email, user.getEmail());
+        assertEquals("student5@example.com", user.getEmail());
         assertTrue(user instanceof Student);
     }
 
     @Test
     public void validFacultyAccountCreationSucceeds() {
-        String uid = generateUniqueId();
-        String email = "faculty_" + uid + "@example.com";
-        Map<String, Object> userData = createUserData(uid, "New Faculty", email, "Password_2!", "ORG001");
+        Map<String, Object> userData = createUserData("U006", "New Faculty", "faculty6@example.com", "Password_2!", "ORG001");
         User user = factory.createUser("Faculty", userData);
 
         assertNotNull(user);
-        assertEquals(email, user.getEmail());
+        assertEquals("faculty6@example.com", user.getEmail());
         assertTrue(user instanceof Faculty);
     }
 
     @Test
     public void validStaffAccountCreationSucceeds() {
-        String uid = generateUniqueId();
-        String email = "staff_" + uid + "@example.com";
-        Map<String, Object> userData = createUserData(uid, "New Staff", email, "Password_3!", "ORG002");
+        Map<String, Object> userData = createUserData("U007", "New Staff", "staff7@example.com", "Password_3!", "ORG002");
         User user = factory.createUser("Staff", userData);
 
         assertNotNull(user);
-        assertEquals(email, user.getEmail());
+        assertEquals("staff7@example.com", user.getEmail());
         assertTrue(user instanceof Staff);
     }
 
     @Test
     public void validPartnerAccountCreationSucceeds() {
-        String uid = generateUniqueId();
-        String email = "partner_" + uid + "@example.com";
-        Map<String, Object> userData = createUserData(uid, "New Partner", email, "Password_4!", "ORG002");
+        Map<String, Object> userData = createUserData("U008", "New Partner", "partner8@example.com", "Password_4!", "ORG002");
         User user = factory.createUser("Partner", userData);
 
         assertNotNull(user);
-        assertEquals(email, user.getEmail());
+        assertEquals("partner8@example.com", user.getEmail());
         assertTrue(user instanceof Partner);
     }
 
     @Test
     public void duplicateUserIdOrEmailRegistrationThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> duplicateData = createUserData(uid, "User Five", "user1@example.com", "Password_5!", "ORG001");
+        // user1@example.com is already registered in accounts.csv (U001)
+        Map<String, Object> duplicateData = createUserData("U009", "User Nine", "user1@example.com", "Password_5!", "ORG001");
         verifyCreateUserFails("Student", duplicateData);
     }
 
     @Test
     public void invalidEmailFormatThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> userData = createUserData(uid, "User Six", "invalidemail.com", "Password_1!", "ORG001");
+        Map<String, Object> userData = createUserData("U010", "User Ten", "invalidemail.com", "Password_1!", "ORG001");
         verifyCreateUserFails("Student", userData);
     }
 
     @Test
     public void weakPasswordWithoutUppercaseThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> userData = createUserData(uid, "User Seven", "u_" + uid + "@example.com", "password_1!", "ORG001");
+        Map<String, Object> userData = createUserData("U011", "User Eleven", "user11@example.com", "password_1!", "ORG001");
         verifyCreateUserFails("Student", userData);
     }
 
     @Test
     public void weakPasswordWithoutLowercaseThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> userData = createUserData(uid, "User Eight", "u_" + uid + "@example.com", "PASSWORD_1!", "ORG001");
+        Map<String, Object> userData = createUserData("U012", "User Twelve", "user12@example.com", "PASSWORD_1!", "ORG001");
         verifyCreateUserFails("Student", userData);
     }
 
     @Test
     public void weakPasswordWithoutNumberThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> userData = createUserData(uid, "User Nine", "u_" + uid + "@example.com", "Password_!", "ORG001");
+        Map<String, Object> userData = createUserData("U013", "User Thirteen", "user13@example.com", "Password_!", "ORG001");
         verifyCreateUserFails("Student", userData);
     }
 
     @Test
     public void weakPasswordWithoutSymbolThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> userData = createUserData(uid, "User Ten", "u_" + uid + "@example.com", "Password123", "ORG001");
+        Map<String, Object> userData = createUserData("U014", "User Fourteen", "user14@example.com", "Password123", "ORG001");
         verifyCreateUserFails("Student", userData);
     }
 
     @Test
     public void weakPasswordTooShortThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> userData = createUserData(uid, "User Eleven", "u_" + uid + "@example.com", "P1!", "ORG001");
+        Map<String, Object> userData = createUserData("U015", "User Fifteen", "user15@example.com", "P1!", "ORG001");
         verifyCreateUserFails("Student", userData);
     }
 
     @Test
     public void nullPasswordThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> userData = createUserData(uid, "User Twelve", "u_" + uid + "@example.com", null, "ORG001");
+        Map<String, Object> userData = createUserData("U016", "User Sixteen", "user16@example.com", null, "ORG001");
         verifyCreateUserFails("Student", userData);
     }
 
     @Test
     public void nullOrEmptyEmailThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> userData = createUserData(uid, "User Thirteen", null, "Password_1!", "ORG001");
+        Map<String, Object> userData = createUserData("U017", "User Seventeen", null, "Password_1!", "ORG001");
         verifyCreateUserFails("Student", userData);
     }
 
     @Test
     public void unknownAccountTypeThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> userData = createUserData(uid, "User Fourteen", "u_" + uid + "@example.com", "Password_1!", "ORG001");
+        Map<String, Object> userData = createUserData("U018", "User Eighteen", "user18@example.com", "Password_1!", "ORG001");
         verifyCreateUserFails("NonExistentType", userData);
     }
 
     @Test
     public void nullUserTypeThrowsException() {
-        String uid = generateUniqueId();
-        Map<String, Object> userData = createUserData(uid, "User Fifteen", "u_" + uid + "@example.com", "Password_1!", "ORG001");
+        Map<String, Object> userData = createUserData("U019", "User Nineteen", "user19@example.com", "Password_1!", "ORG001");
         verifyCreateUserFails(null, userData);
     }
 
@@ -175,18 +152,16 @@ public class Req01AccountCreationTest {
 
     @Test
     public void missingRequiredFieldInUserDataThrowsException() {
-        String uid = generateUniqueId();
         Map<String, Object> incompleteData = new HashMap<>();
-        incompleteData.put("userID", uid);
+        incompleteData.put("userID", "U020");
         incompleteData.put("orgID", "ORG001");
+        incompleteData.put("name", "Incomplete User");
         verifyCreateUserFails("Student", incompleteData);
     }
 
     @Test
     public void verifyHelperFailsWhenUserCreationSucceeds() {
-        String uid = generateUniqueId();
-        String email = "valid_" + uid + "@example.com";
-        Map<String, Object> validData = createUserData(uid, "Valid User", email, "Password_1!", "ORG001");
+        Map<String, Object> validData = createUserData("U021", "Valid User", "user21@example.com", "Password_1!", "ORG001");
 
         boolean assertionTriggered = false;
         try {
