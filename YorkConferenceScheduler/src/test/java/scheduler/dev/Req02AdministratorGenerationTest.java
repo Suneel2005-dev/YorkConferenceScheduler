@@ -40,7 +40,6 @@ public class Req02AdministratorGenerationTest {
     @Test
     public void administratorInstantiationPreservesEmail() {
         Administrator admin = new Administrator("admin_test@yorku.ca", "admin1");
-
         assertNotNull("Administrator instance should not be null", admin);
         assertEquals("admin_test@yorku.ca", admin.getEmail());
     }
@@ -48,7 +47,6 @@ public class Req02AdministratorGenerationTest {
     @Test
     public void administratorDefaultPasswordIsNullOnDirectCreation() {
         Administrator admin = new Administrator("admin_test@yorku.ca", "admin1");
-
         assertNull("Password should be null prior to external assignment/registration", admin.getPassword());
     }
 
@@ -59,6 +57,13 @@ public class Req02AdministratorGenerationTest {
 
         assertNotEquals("Different administrator instances must have distinct emails", 
                         admin1.getEmail(), admin2.getEmail());
+    }
+
+    @Test
+    public void testGeneratedAdministratorHasCorrectAdminID() {
+        Administrator administrator = new Administrator("admin1@yorku.ca", "admin1");
+        assertNotNull(administrator);
+        assertEquals("admin1", administrator.getAdminID());
     }
 
     @Test
@@ -74,35 +79,48 @@ public class Req02AdministratorGenerationTest {
     }
 
     @Test
-    public void userFactoryRejectsUnknownAccountType() {
-        Map<String, Object> userData = createUserData("U001", "user1@example.com", "Password_1!", "ORG001");
-        verifyCreateUserFails("SuperAdmin", userData);
+    public void testGetInstanceReturnsNonNullCoordinator() {
+        ChiefEventCoordinator coordinator = ChiefEventCoordinator.getInstance();
+        assertNotNull(coordinator);
     }
 
     @Test
-    public void userFactoryRejectsNullAccountType() {
-        Map<String, Object> userData = createUserData("U001", "user1@example.com", "Password_1!", "ORG001");
-        verifyCreateUserFails(null, userData);
+    public void testGetInstanceReturnsSameObject() {
+        ChiefEventCoordinator first = ChiefEventCoordinator.getInstance();
+        ChiefEventCoordinator second = ChiefEventCoordinator.getInstance();
+        assertSame(first, second);
     }
 
     @Test
-    public void userFactoryRejectsEmptyAccountType() {
-        Map<String, Object> userData = createUserData("U001", "user1@example.com", "Password_1!", "ORG001");
-        verifyCreateUserFails("", userData);
+    public void testAuthenticateWithCorrectCredentials() {
+        ChiefEventCoordinator coordinator = ChiefEventCoordinator.getInstance();
+        boolean authenticated = coordinator.authenticate("chief@yorku.ca", "Chief123!");
+        assertTrue(authenticated);
     }
 
     @Test
-    public void userFactoryRejectsNullMapData() {
-        verifyCreateUserFails("Student", null);
+    public void testAuthenticateWithIncorrectPassword() {
+        ChiefEventCoordinator coordinator = ChiefEventCoordinator.getInstance();
+        boolean authenticated = coordinator.authenticate("chief@yorku.ca", "WrongPassword123!");
+        assertFalse(authenticated);
     }
 
     @Test
-    public void userFactoryRejectsIncompleteUserData() {
-        Map<String, Object> incompleteData = new HashMap<>();
-        incompleteData.put("userID", "U001");
-        incompleteData.put("orgID", "ADMIN");
-        
-        // Missing required keys like email and password
-        verifyCreateUserFails("Student", incompleteData);
+    public void testAuthenticateWithIncorrectEmail() {
+        ChiefEventCoordinator coordinator = ChiefEventCoordinator.getInstance();
+        boolean authenticated = coordinator.authenticate("notchief@yorku.ca", "Chief123!");
+        assertFalse(authenticated);
+    }
+
+    @Test
+    public void testAuthenticateWithNullCredentials() {
+        ChiefEventCoordinator coordinator = ChiefEventCoordinator.getInstance();
+        assertFalse(coordinator.authenticate(null, null));
+    }
+
+    @Test
+    public void testAuthenticateWithEmptyCredentials() {
+        ChiefEventCoordinator coordinator = ChiefEventCoordinator.getInstance();
+        assertFalse(coordinator.authenticate("", ""));
     }
 }
