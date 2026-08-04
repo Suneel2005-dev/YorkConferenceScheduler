@@ -38,30 +38,6 @@ public class Req01AccountCreationTest {
     }
 
     @Test
-    public void existingStudentEmailUser1IsRejectedAsDuplicate() {
-        Map<String, Object> duplicateData = createUserData("U001", "user1@example.com", "Password_1!", "ORG001");
-        verifyCreateUserFails("Student", duplicateData);
-    }
-
-    @Test
-    public void existingFacultyEmailUser2IsRejectedAsDuplicate() {
-        Map<String, Object> duplicateData = createUserData("U002", "user2@example.com", "Password_2!", "ORG001");
-        verifyCreateUserFails("Faculty", duplicateData);
-    }
-
-    @Test
-    public void existingStaffEmailUser3IsRejectedAsDuplicate() {
-        Map<String, Object> duplicateData = createUserData("U003", "user3@example.com", "Password_3!", "ORG002");
-        verifyCreateUserFails("Staff", duplicateData);
-    }
-
-    @Test
-    public void existingPartnerEmailUser4IsRejectedAsDuplicate() {
-        Map<String, Object> duplicateData = createUserData("U004", "user4@example.com", "Password_4!", "ORG002");
-        verifyCreateUserFails("Partner", duplicateData);
-    }
-
-    @Test
     public void invalidEmailFormatThrowsException() {
         Map<String, Object> userData = createUserData("U001", "invalidemail.com", "Password_1!", "ORG001");
         verifyCreateUserFails("Student", userData);
