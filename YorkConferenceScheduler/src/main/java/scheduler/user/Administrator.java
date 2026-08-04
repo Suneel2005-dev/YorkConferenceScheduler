@@ -18,7 +18,7 @@ public class Administrator extends User {
 
     private static final Path ACCOUNTS_FILE = Path.of("accounts.csv");
 
-	Administrator(String email, String adminID) {
+	public Administrator(String email, String adminID) {
 		if (email == null || email.isBlank()) {
 			throw new IllegalArgumentException("Administrator email cannot be empty.");
 		}
