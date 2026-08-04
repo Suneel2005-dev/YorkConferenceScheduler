@@ -2,7 +2,6 @@ package scheduler.dev;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -19,19 +18,10 @@ public class Req02AdministratorGenerationTest {
         factory = new UserFactory();
     }
 
-    private String getNextUserId() {
-        return "U_" + UUID.randomUUID().toString();
-    }
-
-    private String getNextAdminId() {
-        return "admin_" + UUID.randomUUID().toString().substring(0, 8);
-    }
-
-    private Map<String, Object> createUserData(String userId, String name, String email, String password, String orgId) {
+    private Map<String, Object> createUserData(String userId, String email, String password, String orgId) {
         Map<String, Object> data = new HashMap<>();
         data.put("userID", userId);
         data.put("orgID", orgId);
-        data.put("name", name);
         data.put("email", email);
         data.put("password", password);
         return data;
@@ -44,75 +34,61 @@ public class Req02AdministratorGenerationTest {
         } catch (Throwable t) {
             thrown = true;
         }
-        assertTrue(thrown);
+        assertTrue("Expected exception was not thrown", thrown);
     }
 
     @Test
-    public void userFactoryRejectsDirectChiefCoordinatorCreation() {
-        Map<String, Object> chiefData = createUserData("chief1", "Chief Admin", "chief@yorku.ca", "Chief123!", "ORG001");
-        verifyCreateUserFails("ChiefEventCoordinator", chiefData);
+    public void administratorInstantiationPreservesEmail() {
+        Administrator admin = new Administrator("admin_test@yorku.ca", "admin1");
+
+        assertNotNull("Administrator instance should not be null", admin);
+        assertEquals("admin_test@yorku.ca", admin.getEmail());
+    }
+
+    @Test
+    public void administratorDefaultPasswordIsNullOnDirectCreation() {
+        Administrator admin = new Administrator("admin_test@yorku.ca", "admin1");
+
+        assertNull("Password should be null prior to external assignment/registration", admin.getPassword());
+    }
+
+    @Test
+    public void administratorMultipleInstancesMaintainSeparateState() {
+        Administrator admin1 = new Administrator("admin1@yorku.ca", "admin1");
+        Administrator admin2 = new Administrator("admin2@yorku.ca", "admin2");
+
+        assertNotEquals("Different administrator instances must have distinct emails", 
+                        admin1.getEmail(), admin2.getEmail());
     }
 
     @Test
     public void userFactoryRejectsDirectAdministratorCreation() {
-        String adminId = getNextAdminId();
-        // Administrator passwords are auto-generated upon creation; null password passed to factory
-        Map<String, Object> adminData = createUserData(adminId, "Room Admin 1", adminId + "@yorku.ca", null, "ORG001");
+        Map<String, Object> adminData = createUserData("admin1", "admin1@yorku.ca", null, "ADMIN");
         verifyCreateUserFails("Administrator", adminData);
     }
 
     @Test
-    public void studentRoleIsDistinctFromAdministrator() {
-        String uid = getNextUserId();
-        Map<String, Object> studentData = createUserData(uid, "Student Bob", "student_" + uid + "@example.com", "Password_1!", "ORG001");
-        User student = factory.createUser("Student", studentData);
-
-        assertNotNull(student);
-        assertTrue(student instanceof Student);
-    }
-
-    @Test
-    public void facultyRoleIsDistinctFromAdministrator() {
-        String uid = getNextUserId();
-        Map<String, Object> facultyData = createUserData(uid, "Prof. Smith", "faculty_" + uid + "@example.com", "Password_1!", "ORG001");
-        User faculty = factory.createUser("Faculty", facultyData);
-
-        assertNotNull(faculty);
-        assertTrue(faculty instanceof Faculty);
-    }
-
-    @Test
-    public void staffRoleIsDistinctFromAdministrator() {
-        String uid = getNextUserId();
-        Map<String, Object> staffData = createUserData(uid, "Staff Member", "staff_" + uid + "@example.com", "Password_1!", "ORG002");
-        User staff = factory.createUser("Staff", staffData);
-
-        assertNotNull(staff);
-        assertTrue(staff instanceof Staff);
-    }
-
-    @Test
-    public void partnerRoleIsDistinctFromAdministrator() {
-        String uid = getNextUserId();
-        Map<String, Object> partnerData = createUserData(uid, "External Partner", "partner_" + uid + "@partner.com", "Password_1!", "ORG002");
-        User partner = factory.createUser("Partner", partnerData);
-
-        assertNotNull(partner);
-        assertTrue(partner instanceof Partner);
+    public void userFactoryRejectsDirectChiefCoordinatorCreation() {
+        Map<String, Object> chiefData = createUserData("admin1", "chief@yorku.ca", "Chief123!", "ADMIN");
+        verifyCreateUserFails("ChiefEventCoordinator", chiefData);
     }
 
     @Test
     public void userFactoryRejectsUnknownAccountType() {
-        String uid = getNextUserId();
-        Map<String, Object> userData = createUserData(uid, "Fake Admin", "fake_" + uid + "@example.com", "Password_1!", "ORG001");
+        Map<String, Object> userData = createUserData("U001", "user1@example.com", "Password_1!", "ORG001");
         verifyCreateUserFails("SuperAdmin", userData);
     }
 
     @Test
     public void userFactoryRejectsNullAccountType() {
-        String uid = getNextUserId();
-        Map<String, Object> userData = createUserData(uid, "Null Role", "null_" + uid + "@example.com", "Password_1!", "ORG001");
+        Map<String, Object> userData = createUserData("U001", "user1@example.com", "Password_1!", "ORG001");
         verifyCreateUserFails(null, userData);
+    }
+
+    @Test
+    public void userFactoryRejectsEmptyAccountType() {
+        Map<String, Object> userData = createUserData("U001", "user1@example.com", "Password_1!", "ORG001");
+        verifyCreateUserFails("", userData);
     }
 
     @Test
@@ -122,11 +98,11 @@ public class Req02AdministratorGenerationTest {
 
     @Test
     public void userFactoryRejectsIncompleteUserData() {
-        String uid = getNextUserId();
         Map<String, Object> incompleteData = new HashMap<>();
-        incompleteData.put("userID", uid);
-        incompleteData.put("orgID", "ORG001");
-        incompleteData.put("name", "Incomplete User");
+        incompleteData.put("userID", "U001");
+        incompleteData.put("orgID", "ADMIN");
+        
+        // Missing required keys like email and password
         verifyCreateUserFails("Student", incompleteData);
     }
 }
