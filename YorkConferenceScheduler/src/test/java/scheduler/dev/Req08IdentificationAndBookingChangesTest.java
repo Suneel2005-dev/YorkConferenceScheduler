@@ -21,7 +21,11 @@ public class Req08IdentificationAndBookingChangesTest {
 	private LocalDateTime end;
 	private PaymentStrategy testPayment;
 	private PricingStrategy testPricing;
-	private Map<String, Object> details;
+	private Map<String, Object> details = new HashMap<>();
+	private String userID = "U007";
+	private String email = "Dan3@yorku.ca";
+	private String pwd = "Password!1";
+	private String orgID = "951757";
 	
 	@Before
 	public void setUp() {
@@ -31,7 +35,10 @@ public class Req08IdentificationAndBookingChangesTest {
 		end = LocalDateTime.of(2026, 9, 10, 12, 0);
 		testPayment = new CreditCardPayment();
 		testPricing = new StudentPricing();
-		details = new HashMap<>();
+		details.put("userID", userID);
+		details.put("email", email);
+		details.put("password", pwd);
+		details.put("orgID", orgID);
 	}
 	
 	@Test
@@ -58,14 +65,6 @@ public class Req08IdentificationAndBookingChangesTest {
 	
 	@Test
 	public void testUserValidation() {
-		String userID = "U006";
-		String email = "Dan2@yorku.ca";
-		String pwd = "Password!1";
-		String orgID = "951756";
-		details.put("userID", userID);
-		details.put("email", email);
-		details.put("password", pwd);
-		details.put("orgID", orgID);
 		
 		UserFactory factory = new UserFactory();
 		factory.createUser("student", details);
@@ -75,4 +74,12 @@ public class Req08IdentificationAndBookingChangesTest {
 		assertEquals(orgID, user2.getOrgID());
 	}
 	
+	@Test
+	public void testCancelBookingByUserID() {
+		BookingManager bookingManager = new BookingManager();
+		bookingManager.addRoom(testRoom);
+		Booking booking = bookingManager.createBooking(testUser, testRoom.getRoomID(), start, end, testPricing, testPayment);
+		assertTrue(bookingManager.cancelBooking("U005"));
+		assertTrue(booking.isCancelled());
+	}
 }
