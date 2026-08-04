@@ -82,4 +82,13 @@ public class Req08IdentificationAndBookingChangesTest {
 		assertTrue(bookingManager.cancelBooking("U005"));
 		assertTrue(booking.isCancelled());
 	}
+
+	@Test
+	public void testCancelBookingByBookingID() {
+		BookingManager bookingManager = new BookingManager();
+		bookingManager.addRoom(testRoom);
+		Booking booking = bookingManager.createBooking(testUser, testRoom.getRoomID(), start, end, testPricing, testPayment);
+		assertTrue(bookingManager.cancelBookingByID(booking.getBookingID()));
+		assertTrue(booking.isCancelled());
+	}
 }
