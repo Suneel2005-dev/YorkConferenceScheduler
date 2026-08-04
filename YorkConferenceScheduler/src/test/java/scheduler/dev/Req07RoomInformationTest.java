@@ -36,5 +36,23 @@ public class Req07RoomInformationTest {
 		Room room = new Room("R101", 30, "Lassonde", "1001", false, false, "enabled");
 		assertEquals("Lassonde 1001", room.getLocation());
 	}
+
+	@Test
+	public void testInvalidRoomID() {
+		assertThrows(IllegalArgumentException.class, () -> new Room(null, 30, "Lassonde"));
+		assertThrows(IllegalArgumentException.class, () -> new Room(" ", 30, "Lassonde"));
+		assertThrows(IllegalArgumentException.class, () -> new Room("", 30, "Lassonde"));
+	}
 	
+	@Test
+	public void testInvalidCapacity() {
+		assertThrows(IllegalArgumentException.class, () -> new Room("R101", 0, "Lassonde"));
+		assertThrows(IllegalArgumentException.class, () -> new Room("R101", -5, "Lassonde"));
+	}
+	
+	@Test
+	public void testInvalidBuilding() {
+		assertThrows(IllegalArgumentException.class, () -> new Room("R101", 30, null));
+		assertThrows(IllegalArgumentException.class, () -> new Room("R101", 30, "Lassonde"));
+	}
 }
