@@ -2,6 +2,7 @@ package scheduler.dev;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -16,6 +17,14 @@ public class Req02AdministratorGenerationTest {
     @Before
     public void setUp() {
         factory = new UserFactory();
+    }
+
+    private String getNextUserId() {
+        return "U_" + UUID.randomUUID().toString();
+    }
+
+    private String getNextAdminId() {
+        return "admin_" + UUID.randomUUID().toString().substring(0, 8);
     }
 
     private Map<String, Object> createUserData(String userId, String name, String email, String password, String orgId) {
@@ -40,20 +49,22 @@ public class Req02AdministratorGenerationTest {
 
     @Test
     public void userFactoryRejectsDirectChiefCoordinatorCreation() {
-        Map<String, Object> chiefData = createUserData("chief101", "Chief Admin", "chief101@yorku.ca", "Chief123!", "ORG001");
+        Map<String, Object> chiefData = createUserData("chief1", "Chief Admin", "chief@yorku.ca", "Chief123!", "ORG001");
         verifyCreateUserFails("ChiefEventCoordinator", chiefData);
     }
 
     @Test
     public void userFactoryRejectsDirectAdministratorCreation() {
-        // Administrator passwords are auto-generated upon creation; null password passed
-        Map<String, Object> adminData = createUserData("admin101", "Room Admin 1", "admin101@yorku.ca", null, "ORG001");
+        String adminId = getNextAdminId();
+        // Administrator passwords are auto-generated upon creation; null password passed to factory
+        Map<String, Object> adminData = createUserData(adminId, "Room Admin 1", adminId + "@yorku.ca", null, "ORG001");
         verifyCreateUserFails("Administrator", adminData);
     }
 
     @Test
     public void studentRoleIsDistinctFromAdministrator() {
-        Map<String, Object> studentData = createUserData("U201", "Student Bob", "student201@example.com", "Password_1!", "ORG001");
+        String uid = getNextUserId();
+        Map<String, Object> studentData = createUserData(uid, "Student Bob", "student_" + uid + "@example.com", "Password_1!", "ORG001");
         User student = factory.createUser("Student", studentData);
 
         assertNotNull(student);
@@ -62,7 +73,8 @@ public class Req02AdministratorGenerationTest {
 
     @Test
     public void facultyRoleIsDistinctFromAdministrator() {
-        Map<String, Object> facultyData = createUserData("U202", "Prof. Smith", "faculty202@example.com", "Password_1!", "ORG001");
+        String uid = getNextUserId();
+        Map<String, Object> facultyData = createUserData(uid, "Prof. Smith", "faculty_" + uid + "@example.com", "Password_1!", "ORG001");
         User faculty = factory.createUser("Faculty", facultyData);
 
         assertNotNull(faculty);
@@ -71,7 +83,8 @@ public class Req02AdministratorGenerationTest {
 
     @Test
     public void staffRoleIsDistinctFromAdministrator() {
-        Map<String, Object> staffData = createUserData("U203", "Staff Member", "staff203@example.com", "Password_1!", "ORG002");
+        String uid = getNextUserId();
+        Map<String, Object> staffData = createUserData(uid, "Staff Member", "staff_" + uid + "@example.com", "Password_1!", "ORG002");
         User staff = factory.createUser("Staff", staffData);
 
         assertNotNull(staff);
@@ -80,7 +93,8 @@ public class Req02AdministratorGenerationTest {
 
     @Test
     public void partnerRoleIsDistinctFromAdministrator() {
-        Map<String, Object> partnerData = createUserData("U204", "External Partner", "partner204@partner.com", "Password_1!", "ORG002");
+        String uid = getNextUserId();
+        Map<String, Object> partnerData = createUserData(uid, "External Partner", "partner_" + uid + "@partner.com", "Password_1!", "ORG002");
         User partner = factory.createUser("Partner", partnerData);
 
         assertNotNull(partner);
@@ -89,13 +103,15 @@ public class Req02AdministratorGenerationTest {
 
     @Test
     public void userFactoryRejectsUnknownAccountType() {
-        Map<String, Object> userData = createUserData("U205", "Fake Admin", "fake205@example.com", "Password_1!", "ORG001");
+        String uid = getNextUserId();
+        Map<String, Object> userData = createUserData(uid, "Fake Admin", "fake_" + uid + "@example.com", "Password_1!", "ORG001");
         verifyCreateUserFails("SuperAdmin", userData);
     }
 
     @Test
     public void userFactoryRejectsNullAccountType() {
-        Map<String, Object> userData = createUserData("U206", "Null Role", "null206@example.com", "Password_1!", "ORG001");
+        String uid = getNextUserId();
+        Map<String, Object> userData = createUserData(uid, "Null Role", "null_" + uid + "@example.com", "Password_1!", "ORG001");
         verifyCreateUserFails(null, userData);
     }
 
@@ -106,8 +122,9 @@ public class Req02AdministratorGenerationTest {
 
     @Test
     public void userFactoryRejectsIncompleteUserData() {
+        String uid = getNextUserId();
         Map<String, Object> incompleteData = new HashMap<>();
-        incompleteData.put("userID", "U207");
+        incompleteData.put("userID", uid);
         incompleteData.put("orgID", "ORG001");
         incompleteData.put("name", "Incomplete User");
         verifyCreateUserFails("Student", incompleteData);
