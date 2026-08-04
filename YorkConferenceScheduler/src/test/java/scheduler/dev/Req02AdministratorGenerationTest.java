@@ -39,7 +39,7 @@ public class Req02AdministratorGenerationTest {
 
     @Test
     public void administratorInstantiationPreservesEmail() {
-        Administrator admin = Administrator.authenticate("admin_test@yorku.ca", "admin1");
+        Administrator admin = new Administrator("admin_test@yorku.ca", "admin1");
 
         assertNotNull("Administrator instance should not be null", admin);
         assertEquals("admin_test@yorku.ca", admin.getEmail());
@@ -47,15 +47,15 @@ public class Req02AdministratorGenerationTest {
 
     @Test
     public void administratorDefaultPasswordIsNullOnDirectCreation() {
-        Administrator admin = Administrator.authenticate("admin_test@yorku.ca", "admin1");
+        Administrator admin = new Administrator("admin_test@yorku.ca", "admin1");
 
         assertNull("Password should be null prior to external assignment/registration", admin.getPassword());
     }
 
     @Test
     public void administratorMultipleInstancesMaintainSeparateState() {
-        Administrator admin1 = Administrator.authenticate("admin1@yorku.ca", "admin1");
-        Administrator admin2 = Administrator.authenticate("admin2@yorku.ca", "admin2");
+        Administrator admin1 = new Administrator("admin1@yorku.ca", "admin1");
+        Administrator admin2 = new Administrator("admin2@yorku.ca", "admin2");
 
         assertNotEquals("Different administrator instances must have distinct emails", 
                         admin1.getEmail(), admin2.getEmail());
