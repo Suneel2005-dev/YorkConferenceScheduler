@@ -1,7 +1,7 @@
-PAYMENT
-PAYMENT
-ToolTipText
-hi!
-ROOM_BOOKING
-ROOM_MANAGEMENT
-hi!
+userID	email	password	orgID	accountType	verified
+U001	user1@example.com	password_1	ORG001	student	TRUE
+U002	user2@example.com	password_2	ORG001	faculty	FALSE
+U003	user3@example.com	password_3	ORG002	staff	FALSE
+U004	user4@example.com	password_4	ORG002	partner	FALSE
+admin1	admin1@yorku.ca	KLNj*cPJo7#l	ADMIN	administrator	TRUE
+admin2	admin2@yorku.ca	6HGqxJKd*!hp	ADMIN	administrator	TRUE
